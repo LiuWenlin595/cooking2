@@ -134,10 +134,17 @@ App({
     if (!currentKitchen || !shopInfo) return false;
     
     const userInfo = this.globalData.userInfo;
+    
+    // 如果没有管理员列表，且是默认厨房，允许操作（首次使用）
+    const admins = currentKitchen.admins || [];
+    if (admins.length === 0 && currentKitchen.isDefault) {
+      this.globalData.isAdmin = true;
+      return true;
+    }
+    
     if (!userInfo) return false;
 
     // 检查当前用户是否在管理员列表中
-    const admins = currentKitchen.admins || [];
     const isAdmin = admins.some(admin => 
       admin.nickName === userInfo.nickName || admin.openid === userInfo.openid
     );

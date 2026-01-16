@@ -37,8 +37,8 @@
       </view>
     </view>
     <view class="nav-actions">
-      <view class="action-btn" bindtap="addRecipe" wx:if="{{mode === 'edit' || isAdmin}}">
-        <text>添加菜谱</text>
+      <view class="action-btn {{!isAdmin ? 'disabled' : ''}}" bindtap="addRecipe">
+        <text>➕ 添加菜谱</text>
       </view>
       <view class="action-btn search-btn" bindtap="showSearchInput">
         <text>🔍 搜索</text>
@@ -97,7 +97,13 @@
       <view class="empty" wx:if="{{filteredRecipes.length === 0 && !searchKeyword}}">
         <text class="empty-icon">🍽️</text>
         <text class="empty-text">暂无菜谱</text>
-        <text class="empty-tip" wx:if="{{isAdmin}}">点击"添加菜谱"开始添加吧</text>
+        <text class="empty-tip">点击右上角"添加菜谱"开始添加吧</text>
+        <view class="empty-action" wx:if="{{isAdmin}}" bindtap="addRecipe">
+          <text>立即添加</text>
+        </view>
+        <text class="empty-tip" wx:if="{{!isAdmin}}" style="color: #999; font-size: 22rpx; margin-top: 10rpx;">
+          提示：需要管理员权限才能添加菜谱
+        </text>
       </view>
       <view class="empty" wx:if="{{filteredRecipes.length === 0 && searchKeyword}}">
         <text class="empty-icon">🔍</text>

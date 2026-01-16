@@ -140,6 +140,11 @@
   font-size: 24rpx;
 }
 
+.action-btn.disabled {
+  background-color: #ccc;
+  opacity: 0.7;
+}
+
 .search-btn {
   background-color: transparent;
   color: #9b59b6;
@@ -336,6 +341,16 @@
 .empty-tip {
   font-size: 24rpx;
   color: #999;
+}
+
+.empty-action {
+  margin-top: 30rpx;
+  padding: 15rpx 40rpx;
+  background-color: #9b59b6;
+  color: #fff;
+  border-radius: 30rpx;
+  font-size: 28rpx;
+  display: inline-block;
 }
 
 /* 底部操作栏 */
