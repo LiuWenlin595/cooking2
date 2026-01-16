@@ -1,0 +1,52 @@
+<!--pages/shop/kitchen-list/kitchen-list.wxml-->
+<view class="kitchen-list-page">
+  <view class="kitchen-list">
+    <view class="kitchen-card" wx:for="{{kitchens}}" wx:key="id">
+      <view class="kitchen-header">
+        <view class="kitchen-info">
+          <text class="kitchen-name">{{item.name}}</text>
+          <text class="kitchen-badge" wx:if="{{item.isDefault}}">默认</text>
+          <text class="current-badge" wx:if="{{item.id === currentKitchenId}}">当前</text>
+        </view>
+        <view class="kitchen-status">
+          <text class="status-text" wx:if="{{item.id === currentKitchenId}}">✓ 使用中</text>
+        </view>
+      </view>
+      
+      <view class="kitchen-meta">
+        <text class="meta-item">管理员：{{item.admins ? item.admins.length : 0}}人</text>
+      </view>
+
+      <view class="kitchen-actions">
+        <view class="action-btn switch-btn {{item.id === currentKitchenId ? 'active' : ''}}" 
+              data-id="{{item.id}}" 
+              bindtap="switchKitchen">
+          <text>切换</text>
+        </view>
+        <view class="action-btn edit-btn" 
+              data-id="{{item.id}}" 
+              bindtap="editKitchen">
+          <text>编辑</text>
+        </view>
+        <view class="action-btn admin-btn" 
+              data-id="{{item.id}}" 
+              bindtap="manageAdmins">
+          <text>管理员</text>
+        </view>
+        <view class="action-btn delete-btn" 
+              wx:if="{{!item.isDefault && kitchens.length > 1}}"
+              data-id="{{item.id}}" 
+              bindtap="deleteKitchen">
+          <text>删除</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="add-section">
+    <view class="add-btn" bindtap="addKitchen">
+      <text>+ 添加厨房</text>
+    </view>
+  </view>
+</view>

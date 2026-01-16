@@ -1,0 +1,130 @@
+/**app.wxss**/
+page {
+  background-color: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  font-size: 32rpx;
+  color: #333;
+}
+
+.container {
+  padding: 30rpx;
+}
+
+/* 通用按钮样式 */
+.btn {
+  padding: 20rpx 40rpx;
+  border-radius: 10rpx;
+  text-align: center;
+  font-size: 28rpx;
+  border: none;
+  box-sizing: border-box;
+}
+
+.btn-primary {
+  background-color: #9b59b6;
+  color: #fff;
+}
+
+.btn-secondary {
+  background-color: #95a5a6;
+  color: #fff;
+}
+
+.btn-success {
+  background-color: #2ecc71;
+  color: #fff;
+}
+
+.btn-warning {
+  background-color: #f39c12;
+  color: #fff;
+}
+
+.btn-outline {
+  background-color: transparent;
+  border: 2rpx solid #9b59b6;
+  color: #9b59b6;
+}
+
+/* 卡片样式 */
+.card {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+/* 输入框样式 */
+.input {
+  width: 100%;
+  padding: 20rpx;
+  border: 2rpx solid #e0e0e0;
+  border-radius: 10rpx;
+  font-size: 28rpx;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  border-color: #9b59b6;
+}
+
+/* 标签样式 */
+.tag {
+  display: inline-block;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  margin-right: 10rpx;
+  margin-bottom: 10rpx;
+}
+
+.tag-primary {
+  background-color: #9b59b6;
+  color: #fff;
+}
+
+.tag-success {
+  background-color: #2ecc71;
+  color: #fff;
+}
+
+.tag-warning {
+  background-color: #f39c12;
+  color: #fff;
+}
+
+/* 空状态 */
+.empty {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 20rpx;
+}
+
+/* 加载中 */
+.loading {
+  text-align: center;
+  padding: 50rpx 0;
+  color: #999;
+}
+
+/* 分割线 */
+.divider {
+  height: 2rpx;
+  background-color: #e0e0e0;
+  margin: 30rpx 0;
+}
+
+/* 紫色主题色 */
+.theme-color {
+  color: #9b59b6;
+}
+
+.theme-bg {
+  background-color: #9b59b6;
+}

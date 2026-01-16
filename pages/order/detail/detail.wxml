@@ -1,0 +1,80 @@
+<!--pages/order/detail/detail.wxml-->
+<view class="detail-page" wx:if="{{order}}">
+  <!-- 订单状态 -->
+  <view class="status-section">
+    <view class="status-icon" style="color: {{getStatusColor(order.status)}}">
+      <text wx:if="{{order.status === 'pending'}}">⏳</text>
+      <text wx:if="{{order.status === 'processing'}}">👨‍🍳</text>
+      <text wx:if="{{order.status === 'completed'}}">✅</text>
+    </view>
+    <text class="status-text" style="color: {{getStatusColor(order.status)}}">{{getStatusText(order.status)}}</text>
+  </view>
+
+  <!-- 订单信息 -->
+  <view class="info-section">
+    <view class="info-item">
+      <text class="label">订单编号</text>
+      <text class="value">{{order.id}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">下单时间</text>
+      <text class="value">{{formatTime(order.createTime)}}</text>
+    </view>
+    <view class="info-item" wx:if="{{order.updateTime}}">
+      <text class="label">更新时间</text>
+      <text class="value">{{formatTime(order.updateTime)}}</text>
+    </view>
+    <view class="info-item">
+      <text class="label">厨房</text>
+      <text class="value">{{order.kitchenName}}</text>
+    </view>
+  </view>
+
+  <!-- 订单商品 -->
+  <view class="items-section">
+    <text class="section-title">订单商品</text>
+    <view class="item-card" wx:for="{{order.items}}" wx:key="recipeId">
+      <image class="item-image" src="{{item.recipeImage || '/images/default-recipe.png'}}" mode="aspectFill"></image>
+      <view class="item-info">
+        <text class="item-name">{{item.recipeName}}</text>
+        <view class="item-meta">
+          <text class="item-quantity">数量：{{item.quantity}}</text>
+          <text class="item-price">¥{{item.price}}</text>
+        </view>
+      </view>
+      <text class="item-total">¥{{item.price * item.quantity}}</text>
+    </view>
+  </view>
+
+  <!-- 订单备注 -->
+  <view class="remark-section" wx:if="{{order.remark}}">
+    <text class="section-title">订单备注</text>
+    <text class="remark-text">{{order.remark}}</text>
+  </view>
+
+  <!-- 订单总计 -->
+  <view class="total-section">
+    <view class="total-item">
+      <text class="total-label">商品总计</text>
+      <text class="total-value">¥{{order.totalPrice}}</text>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-section" wx:if="{{isAdmin}}">
+    <view class="action-btn accept-btn" 
+          wx:if="{{order.status === 'pending'}}" 
+          bindtap="acceptOrder">
+      <text>接单</text>
+    </view>
+    <view class="action-btn complete-btn" 
+          wx:if="{{order.status === 'processing'}}" 
+          bindtap="completeOrder">
+      <text>出餐</text>
+    </view>
+  </view>
+</view>
+
+<view class="loading" wx:else>
+  <text>加载中...</text>
+</view>

@@ -1,0 +1,63 @@
+<!--pages/shop/settings/settings.wxml-->
+<view class="settings-page">
+  <view class="form-section">
+    <!-- 店铺名称 -->
+    <view class="form-item">
+      <text class="label">店铺名称 *</text>
+      <input class="input" placeholder="请输入店铺名称" value="{{formData.name}}" bindinput="onNameInput" />
+    </view>
+
+    <!-- 店铺头像 -->
+    <view class="form-item">
+      <text class="label">店铺头像</text>
+      <view class="image-upload" bindtap="chooseAvatar">
+        <image wx:if="{{formData.avatar}}" class="uploaded-image" src="{{formData.avatar}}" mode="aspectFill" bindtap="previewAvatar"></image>
+        <view wx:else class="upload-placeholder">
+          <text class="icon">📷</text>
+          <text>点击上传头像</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 背景图 -->
+    <view class="form-item">
+      <text class="label">背景图</text>
+      <view class="image-upload" bindtap="chooseBackground">
+        <image wx:if="{{formData.background}}" class="uploaded-image" src="{{formData.background}}" mode="aspectFill" bindtap="previewBackground"></image>
+        <view wx:else class="upload-placeholder">
+          <text class="icon">🖼️</text>
+          <text>点击上传背景图</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 店铺简介 -->
+    <view class="form-item">
+      <text class="label">店铺简介</text>
+      <textarea class="textarea" placeholder="请输入店铺简介" value="{{formData.intro}}" bindinput="onIntroInput" maxlength="100"></textarea>
+    </view>
+
+    <!-- 订单通知 -->
+    <view class="form-item">
+      <view class="switch-item">
+        <text class="label">订单通知</text>
+        <switch checked="{{orderNotification}}" bindchange="toggleOrderNotification" color="#9b59b6" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 管理厨房 -->
+  <view class="action-section">
+    <view class="action-btn" bindtap="manageKitchens">
+      <text>管理厨房</text>
+      <text class="arrow">></text>
+    </view>
+  </view>
+
+  <!-- 保存按钮 -->
+  <view class="save-section">
+    <view class="save-btn" bindtap="saveSettings">
+      <text>保存设置</text>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,150 @@
+/* pages/profile/profile.wxss */
+.profile-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+/* 用户信息 */
+.user-section {
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  padding: 60rpx 30rpx;
+  color: #fff;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+}
+
+.user-avatar {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  margin-right: 30rpx;
+  border: 4rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.default-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(255, 255, 255, 0.2);
+  font-size: 60rpx;
+}
+
+.user-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.user-name {
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+.user-desc {
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+.login-btn {
+  padding: 10rpx 30rpx;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  display: inline-block;
+}
+
+/* 数据统计 */
+.stats-section {
+  background-color: #fff;
+  margin: 20rpx 30rpx;
+  border-radius: 20rpx;
+  padding: 30rpx;
+}
+
+.section-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30rpx;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20rpx;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 30rpx;
+  background-color: #f5f0f9;
+  border-radius: 15rpx;
+}
+
+.stat-value {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #9b59b6;
+  margin-bottom: 10rpx;
+}
+
+.stat-label {
+  display: block;
+  font-size: 24rpx;
+  color: #666;
+}
+
+/* 功能菜单 */
+.menu-section {
+  margin: 20rpx 30rpx;
+}
+
+.menu-item {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.menu-item.danger {
+  color: #e74c3c;
+}
+
+.menu-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.menu-icon {
+  font-size: 40rpx;
+}
+
+.menu-text {
+  font-size: 28rpx;
+  color: #333;
+}
+
+.menu-desc {
+  font-size: 22rpx;
+  color: #999;
+  margin-left: 10rpx;
+}
+
+.menu-item.danger .menu-text {
+  color: #e74c3c;
+}
+
+.menu-arrow {
+  color: #999;
+  font-size: 24rpx;
+}

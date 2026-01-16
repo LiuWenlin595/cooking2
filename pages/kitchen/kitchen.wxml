@@ -1,0 +1,121 @@
+<!--pages/kitchen/kitchen.wxml-->
+<view class="kitchen-page">
+  <!-- 顶部店铺信息 -->
+  <view class="header-section">
+    <image class="header-bg" src="{{shopInfo.background || '/images/default-bg.jpg'}}" mode="aspectFill"></image>
+    <view class="shop-info">
+      <view class="shop-header">
+        <view class="shop-left">
+          <image class="shop-avatar" src="{{shopInfo.avatar || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+          <view class="shop-details">
+            <text class="shop-name">{{shopInfo.name || '我的小店'}}</text>
+            <text class="kitchen-name" wx:if="{{currentKitchen}}">{{currentKitchen.name}} · 共{{filteredRecipes.length}}个菜谱</text>
+            <text class="kitchen-name" wx:else>加载中...</text>
+            <text class="shop-intro" wx:if="{{shopInfo.intro}}">{{shopInfo.intro}}</text>
+          </view>
+        </view>
+        <view class="shop-right">
+          <view class="icon-btn" bindtap="switchKitchen">
+            <text class="iconfont">🏠</text>
+          </view>
+          <view class="icon-btn" bindtap="goToSettings">
+            <text class="iconfont">⚙️</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 功能导航栏 -->
+  <view class="nav-bar">
+    <view class="nav-tabs">
+      <view class="nav-tab {{mode === 'order' ? 'active' : ''}}" data-mode="order" bindtap="switchMode">
+        <text>点单</text>
+      </view>
+      <view class="nav-tab {{mode === 'edit' ? 'active' : ''}}" data-mode="edit" bindtap="switchMode" wx:if="{{isAdmin}}">
+        <text>编辑</text>
+      </view>
+    </view>
+    <view class="nav-actions">
+      <view class="action-btn" bindtap="addRecipe" wx:if="{{mode === 'edit' || isAdmin}}">
+        <text>添加菜谱</text>
+      </view>
+      <view class="action-btn search-btn" bindtap="showSearchInput">
+        <text>🔍 搜索</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 搜索框 -->
+  <view class="search-box" wx:if="{{showSearch}}">
+    <input class="search-input" placeholder="搜索菜名、描述、分类" value="{{searchKeyword}}" bindinput="onSearchInput" />
+    <view class="search-close" bindtap="hideSearch">✕</view>
+  </view>
+
+  <!-- 主内容区域 -->
+  <view class="content-section">
+    <view class="category-sidebar">
+      <view class="category-item {{selectedCategory === 'all' ? 'active' : ''}}" data-id="all" bindtap="selectCategory">
+        <text>全部</text>
+      </view>
+      <view class="category-item {{selectedCategory === item.id ? 'active' : ''}}" 
+            wx:for="{{categories}}" 
+            wx:key="id"
+            data-id="{{item.id}}" 
+            bindtap="selectCategory">
+        <text>{{item.icon}} {{item.name}}</text>
+      </view>
+    </view>
+
+    <view class="recipe-list">
+      <view class="recipe-card" wx:for="{{filteredRecipes}}" wx:key="id" data-id="{{item.id}}" bindtap="goToDetail">
+        <image class="recipe-image" src="{{item.image || '/images/default-recipe.png'}}" mode="aspectFill" binderror="onImageError" data-id="{{item.id}}"></image>
+        <view class="recipe-info">
+          <view class="recipe-header">
+            <text class="recipe-name">{{item.name}}</text>
+            <text class="must-have-tag" wx:if="{{item.isMustHave}}">必点</text>
+          </view>
+          <view class="recipe-meta">
+            <text class="recipe-rating">⭐ {{item.rating || 0}}</text>
+            <text class="recipe-sales">月销{{item.monthlySales || 0}}</text>
+          </view>
+          <view class="recipe-footer">
+            <view class="recipe-tags">
+              <text class="tag" wx:if="{{item.difficulty}}">{{item.difficulty}}</text>
+              <text class="tag" wx:if="{{item.duration}}">{{item.duration}}分钟</text>
+            </view>
+            <view class="add-btn" catchtap="addToCart" data-id="{{item.id}}" wx:if="{{mode === 'order'}}">
+              <text>+</text>
+            </view>
+            <view class="edit-actions" wx:if="{{mode === 'edit' && isAdmin}}">
+              <view class="edit-btn" catchtap="editRecipe" data-id="{{item.id}}">编辑</view>
+              <view class="delete-btn" catchtap="deleteRecipe" data-id="{{item.id}}">删除</view>
+            </view>
+          </view>
+        </view>
+      </view>
+      <view class="empty" wx:if="{{filteredRecipes.length === 0 && !searchKeyword}}">
+        <text class="empty-icon">🍽️</text>
+        <text class="empty-text">暂无菜谱</text>
+        <text class="empty-tip" wx:if="{{isAdmin}}">点击"添加菜谱"开始添加吧</text>
+      </view>
+      <view class="empty" wx:if="{{filteredRecipes.length === 0 && searchKeyword}}">
+        <text class="empty-icon">🔍</text>
+        <text class="empty-text">未找到相关菜谱</text>
+        <text class="empty-tip">试试其他关键词</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar" wx:if="{{mode === 'order'}}">
+    <view class="cart-icon" bindtap="goToCart">
+      <text class="icon">🛒</text>
+      <text class="cart-count" wx:if="{{cartCount > 0}}">{{cartCount}}</text>
+    </view>
+    <view class="action-buttons">
+      <view class="invite-btn" bindtap="inviteOrder">邀请下单</view>
+      <view class="order-btn {{cartCount > 0 ? 'active' : ''}}" bindtap="goToCart">下单</view>
+    </view>
+  </view>
+</view>

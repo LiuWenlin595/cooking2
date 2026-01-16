@@ -1,0 +1,78 @@
+<!--pages/recipe/detail/detail.wxml-->
+<view class="detail-page" wx:if="{{recipe}}">
+  <!-- 菜谱图片 -->
+  <view class="recipe-header">
+    <image class="recipe-image" src="{{recipe.image || '/images/default-recipe.png'}}" mode="aspectFill"></image>
+    <view class="recipe-overlay">
+      <view class="recipe-title">{{recipe.name}}</view>
+      <view class="recipe-tags">
+        <text class="tag" wx:if="{{recipe.isMustHave}}">必点</text>
+        <text class="tag">{{recipe.categoryName}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 菜谱信息 -->
+  <view class="recipe-info">
+    <view class="info-section">
+      <view class="info-item">
+        <text class="label">描述</text>
+        <text class="value">{{recipe.description || '暂无描述'}}</text>
+      </view>
+      
+      <view class="info-row">
+        <view class="info-item">
+          <text class="label">份量</text>
+          <text class="value">{{recipe.serving || '未设置'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">制作时长</text>
+          <text class="value">{{recipe.duration || '未设置'}}分钟</text>
+        </view>
+      </view>
+
+      <view class="info-row">
+        <view class="info-item">
+          <text class="label">难度</text>
+          <text class="value">{{recipe.difficulty || '未设置'}}</text>
+        </view>
+        <view class="info-item">
+          <text class="label">评分</text>
+          <text class="value">⭐ {{recipe.rating || 0}}</text>
+        </view>
+      </view>
+
+      <view class="info-item" wx:if="{{recipe.recipeLink}}">
+        <text class="label">制作链接</text>
+        <view class="link-btn" bindtap="goToRecipeLink">
+          <text>查看制作方法</text>
+          <text class="arrow">→</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 操作按钮 -->
+    <view class="action-section">
+      <view class="action-btn add-cart-btn" bindtap="addToCart">
+        <text>加入购物车</text>
+      </view>
+      <view class="action-btn order-btn" bindtap="quickOrder">
+        <text>快速下单</text>
+      </view>
+    </view>
+
+    <!-- 管理员操作 -->
+    <view class="admin-actions" wx:if="{{isAdmin}}">
+      <view class="admin-btn edit-btn" bindtap="editRecipe">
+        <text>编辑菜谱</text>
+      </view>
+      <view class="admin-btn delete-btn" bindtap="deleteRecipe">
+        <text>删除菜谱</text>
+      </view>
+    </view>
+  </view>
+</view>
+
+<view class="loading" wx:else>
+  <text>加载中...</text>
+</view>

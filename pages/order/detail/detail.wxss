@@ -1,0 +1,199 @@
+/* pages/order/detail/detail.wxss */
+.detail-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding-bottom: 200rpx;
+}
+
+/* 订单状态 */
+.status-section {
+  background-color: #fff;
+  padding: 60rpx 30rpx;
+  text-align: center;
+  margin-bottom: 20rpx;
+}
+
+.status-icon {
+  font-size: 120rpx;
+  margin-bottom: 20rpx;
+}
+
+.status-text {
+  font-size: 36rpx;
+  font-weight: bold;
+}
+
+/* 订单信息 */
+.info-section {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.label {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.value {
+  font-size: 28rpx;
+  color: #333;
+}
+
+/* 订单商品 */
+.items-section {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.section-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 30rpx;
+}
+
+.item-card {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.item-card:last-child {
+  border-bottom: none;
+}
+
+.item-image {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 15rpx;
+  margin-right: 20rpx;
+}
+
+.item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15rpx;
+}
+
+.item-name {
+  font-size: 30rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.item-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.item-quantity {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.item-price {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.item-total {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #9b59b6;
+}
+
+/* 订单备注 */
+.remark-section {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.remark-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 订单总计 */
+.total-section {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+}
+
+.total-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-label {
+  font-size: 32rpx;
+  color: #333;
+}
+
+.total-value {
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #9b59b6;
+}
+
+/* 操作按钮 */
+.action-section {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 30rpx;
+  background-color: #fff;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 25rpx;
+  border-radius: 15rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #fff;
+}
+
+.accept-btn {
+  background-color: #3498db;
+}
+
+.complete-btn {
+  background-color: #2ecc71;
+}
+
+.loading {
+  text-align: center;
+  padding: 100rpx 0;
+  color: #999;
+  font-size: 28rpx;
+}

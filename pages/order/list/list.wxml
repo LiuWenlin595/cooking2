@@ -1,0 +1,80 @@
+<!--pages/order/list/list.wxml-->
+<view class="order-list-page">
+  <!-- 状态筛选栏 -->
+  <view class="filter-bar">
+    <view class="filter-item {{statusFilter === 'all' ? 'active' : ''}}" 
+          data-status="all" 
+          bindtap="switchStatusFilter">
+      <text>全部</text>
+    </view>
+    <view class="filter-item {{statusFilter === 'pending' ? 'active' : ''}}" 
+          data-status="pending" 
+          bindtap="switchStatusFilter">
+      <text>待处理</text>
+    </view>
+    <view class="filter-item {{statusFilter === 'processing' ? 'active' : ''}}" 
+          data-status="processing" 
+          bindtap="switchStatusFilter">
+      <text>制作中</text>
+    </view>
+    <view class="filter-item {{statusFilter === 'completed' ? 'active' : ''}}" 
+          data-status="completed" 
+          bindtap="switchStatusFilter">
+      <text>已完成</text>
+    </view>
+  </view>
+
+  <!-- 订单列表 -->
+  <view class="order-list">
+    <view class="order-card" wx:for="{{filteredOrders}}" wx:key="id" data-id="{{item.id}}" bindtap="goToDetail">
+      <view class="order-header">
+        <view class="order-info">
+          <text class="order-id">订单 #{{item.id ? item.id.substring(0, 8) : '未知'}}</text>
+          <text class="order-time">{{formatTime(item.createTime)}}</text>
+        </view>
+        <view class="order-status" style="color: {{getStatusColor(item.status)}}">
+          <text>{{getStatusText(item.status)}}</text>
+        </view>
+      </view>
+
+      <view class="order-items">
+        <view class="order-item" wx:for="{{item.items}}" wx:key="recipeId" wx:for-item="orderItem">
+          <image class="item-image" src="{{orderItem.recipeImage || '/images/default-recipe.png'}}" mode="aspectFill"></image>
+          <view class="item-info">
+            <text class="item-name">{{orderItem.recipeName}}</text>
+            <text class="item-quantity">x{{orderItem.quantity}}</text>
+          </view>
+          <text class="item-price">¥{{orderItem.price * orderItem.quantity}}</text>
+        </view>
+      </view>
+
+      <view class="order-footer">
+        <text class="total-price">合计：¥{{item.totalPrice}}</text>
+        <view class="order-actions" wx:if="{{isAdmin}}">
+          <view class="action-btn accept-btn" 
+                wx:if="{{item.status === 'pending'}}" 
+                catchtap="acceptOrder" 
+                data-id="{{item.id}}">
+            <text>接单</text>
+          </view>
+          <view class="action-btn complete-btn" 
+                wx:if="{{item.status === 'processing'}}" 
+                catchtap="completeOrder" 
+                data-id="{{item.id}}">
+            <text>出餐</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="empty" wx:if="{{filteredOrders.length === 0 && statusFilter === 'all'}}">
+      <text class="empty-icon">📋</text>
+      <text class="empty-text">暂无订单</text>
+      <text class="empty-tip">快去下单吧</text>
+    </view>
+    <view class="empty" wx:if="{{filteredOrders.length === 0 && statusFilter !== 'all'}}">
+      <text class="empty-icon">📭</text>
+      <text class="empty-text">暂无{{getStatusText(statusFilter)}}订单</text>
+    </view>
+  </view>
+</view>

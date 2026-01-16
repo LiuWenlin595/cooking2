@@ -1,0 +1,94 @@
+<!--pages/recipe/add/add.wxml-->
+<view class="add-page">
+  <view class="form-section">
+    <!-- 菜谱图片 -->
+    <view class="form-item">
+      <text class="label">菜谱图片 *</text>
+      <view class="image-upload" bindtap="chooseImage">
+        <image wx:if="{{formData.image}}" class="uploaded-image" src="{{formData.image}}" mode="aspectFill" bindtap="previewImage"></image>
+        <view wx:else class="upload-placeholder">
+          <text class="icon">📷</text>
+          <text>点击上传图片</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 菜名 -->
+    <view class="form-item">
+      <text class="label">菜名 *</text>
+      <input class="input" placeholder="请输入菜名" value="{{formData.name}}" bindinput="onNameInput" />
+    </view>
+
+    <!-- 分类 -->
+    <view class="form-item">
+      <text class="label">分类 *</text>
+      <picker mode="selector" range="{{categories}}" range-key="name" value="{{categoryIndex}}" bindchange="onCategoryChange">
+        <view class="picker">
+          <text wx:if="{{formData.categoryId}}">{{selectedCategoryName}}</text>
+          <text wx:else class="placeholder">请选择分类</text>
+          <text class="arrow">></text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 描述 -->
+    <view class="form-item">
+      <text class="label">描述</text>
+      <textarea class="textarea" placeholder="请输入菜谱描述" value="{{formData.description}}" bindinput="onDescriptionInput" maxlength="200"></textarea>
+    </view>
+
+    <!-- 份量 -->
+    <view class="form-item">
+      <text class="label">份量</text>
+      <input class="input" placeholder="如：2-3人份" value="{{formData.serving}}" bindinput="onServingInput" />
+    </view>
+
+    <!-- 制作时长 -->
+    <view class="form-item">
+      <text class="label">制作时长（分钟）</text>
+      <input class="input" type="number" placeholder="如：30" value="{{formData.duration}}" bindinput="onDurationInput" />
+    </view>
+
+    <!-- 难度 -->
+    <view class="form-item">
+      <text class="label">难度</text>
+      <picker mode="selector" range="{{difficultyOptions}}" value="{{difficultyIndex}}" bindchange="onDifficultyChange">
+        <view class="picker">
+          <text wx:if="{{selectedDifficulty}}">{{selectedDifficulty}}</text>
+          <text wx:else class="placeholder">请选择难度</text>
+          <text class="arrow">></text>
+        </view>
+      </picker>
+    </view>
+
+    <!-- 制作链接 -->
+    <view class="form-item">
+      <text class="label">制作链接</text>
+      <input class="input" placeholder="请输入制作方法链接" value="{{formData.recipeLink}}" bindinput="onRecipeLinkInput" />
+    </view>
+
+    <!-- 价格 -->
+    <view class="form-item">
+      <text class="label">价格（元）</text>
+      <input class="input" type="digit" placeholder="0" value="{{formData.price}}" bindinput="onPriceInput" />
+    </view>
+
+    <!-- 必点菜 -->
+    <view class="form-item">
+      <view class="switch-item">
+        <text class="label">设为必点菜</text>
+        <switch checked="{{formData.isMustHave}}" bindchange="toggleMustHave" color="#9b59b6" />
+      </view>
+    </view>
+  </view>
+
+  <!-- 操作按钮 -->
+  <view class="action-section">
+    <view class="save-btn" bindtap="saveRecipe">
+      <text>{{isEdit ? '保存修改' : '添加菜谱'}}</text>
+    </view>
+    <view class="delete-btn" wx:if="{{isEdit}}" bindtap="deleteRecipe">
+      <text>删除菜谱</text>
+    </view>
+  </view>
+</view>

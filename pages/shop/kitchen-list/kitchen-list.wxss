@@ -1,0 +1,126 @@
+/* pages/shop/kitchen-list/kitchen-list.wxss */
+.kitchen-list-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding-bottom: 200rpx;
+}
+
+.kitchen-list {
+  padding: 30rpx;
+}
+
+.kitchen-card {
+  background-color: #fff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.kitchen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.kitchen-info {
+  display: flex;
+  align-items: center;
+  gap: 15rpx;
+}
+
+.kitchen-name {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.kitchen-badge {
+  padding: 4rpx 12rpx;
+  background-color: #9b59b6;
+  color: #fff;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+}
+
+.current-badge {
+  padding: 4rpx 12rpx;
+  background-color: #2ecc71;
+  color: #fff;
+  border-radius: 8rpx;
+  font-size: 20rpx;
+}
+
+.kitchen-status {
+  font-size: 28rpx;
+  color: #2ecc71;
+}
+
+.kitchen-meta {
+  margin-bottom: 20rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 2rpx solid #f0f0f0;
+}
+
+.meta-item {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.kitchen-actions {
+  display: flex;
+  gap: 15rpx;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 15rpx;
+  border-radius: 10rpx;
+  text-align: center;
+  font-size: 26rpx;
+  color: #fff;
+}
+
+.switch-btn {
+  background-color: #9b59b6;
+}
+
+.switch-btn.active {
+  background-color: #7d3c98;
+  opacity: 0.7;
+}
+
+.edit-btn {
+  background-color: #3498db;
+}
+
+.admin-btn {
+  background-color: #f39c12;
+}
+
+.delete-btn {
+  background-color: #e74c3c;
+}
+
+.add-section {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 30rpx;
+  background-color: #fff;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.1);
+  z-index: 100;
+}
+
+.add-btn {
+  width: 100%;
+  padding: 25rpx;
+  background-color: #9b59b6;
+  color: #fff;
+  border-radius: 15rpx;
+  text-align: center;
+  font-size: 32rpx;
+  font-weight: bold;
+}
