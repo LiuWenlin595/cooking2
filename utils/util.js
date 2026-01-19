@@ -30,10 +30,14 @@ const deepClone = (obj) => {
 // 防抖函数
 const debounce = (func, wait) => {
   let timeout;
-  return function executedFunction(...args) {
-    const later = () => {
+  return function executedFunction() {
+    // 使用 arguments 替代剩余参数
+    const args = arguments;
+    const context = this;
+    const later = function() {
       clearTimeout(timeout);
-      func(...args);
+      // 使用 apply 替代展开运算符
+      func.apply(context, args);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);

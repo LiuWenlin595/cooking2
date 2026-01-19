@@ -49,6 +49,15 @@
   opacity: 0.9;
 }
 
+.user-badge {
+  margin-top: 10rpx;
+  padding: 8rpx 20rpx;
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 20rpx;
+  font-size: 22rpx;
+  display: inline-block;
+}
+
 .login-btn {
   padding: 10rpx 30rpx;
   background-color: rgba(255, 255, 255, 0.3);
@@ -140,11 +149,29 @@
   margin-left: 10rpx;
 }
 
+.menu-item.danger {
+  background-color: #ffebee;
+}
+
+.menu-item.danger .menu-icon,
 .menu-item.danger .menu-text {
-  color: #e74c3c;
+  color: #f44336;
 }
 
 .menu-arrow {
   color: #999;
   font-size: 24rpx;
+}
+
+/* 管理员专用菜单项 */
+.menu-item.admin-item {
+  background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+  color: #fff;
+}
+
+.menu-item.admin-item .menu-icon,
+.menu-item.admin-item .menu-text,
+.menu-item.admin-item .menu-desc,
+.menu-item.admin-item .menu-arrow {
+  color: #fff;
 }

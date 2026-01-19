@@ -29,6 +29,11 @@ Page({
   },
 
   onLoad(options) {
+    // 检查管理员权限
+    if (!this.checkAdminPermission()) {
+      return;
+    }
+    
     const id = options.id;
     if (id) {
       this.setData({
@@ -39,6 +44,30 @@ Page({
     } else {
       this.loadCategories();
     }
+  },
+
+  // 检查管理员权限
+  checkAdminPermission() {
+    const isAdmin = app.checkIsAdmin();
+    const currentKitchen = app.globalData.currentKitchen;
+    
+    // 检查是否是首次使用（没有管理员的默认厨房）
+    const admins = currentKitchen && currentKitchen.admins ? currentKitchen.admins : [];
+    const isFirstTime = admins.length === 0 && currentKitchen && currentKitchen.isDefault;
+    
+    if (!isAdmin && !isFirstTime) {
+      wx.showModal({
+        title: '权限不足',
+        content: '只有管理员才能添加或编辑菜谱',
+        showCancel: false,
+        success: () => {
+          wx.navigateBack();
+        }
+      });
+      return false;
+    }
+    
+    return true;
   },
 
   // 加载分类
@@ -200,11 +229,10 @@ Page({
       // 编辑模式
       const index = recipes.findIndex(r => r.id === this.data.recipeId);
       if (index !== -1) {
-        recipes[index] = {
-          ...recipes[index],
-          ...formData,
+        // 使用 Object.assign 替代展开运算符
+        recipes[index] = Object.assign({}, recipes[index], formData, {
           updateTime: new Date().toISOString()
-        };
+        });
       }
     } else {
       // 新增模式
@@ -217,13 +245,13 @@ Page({
         return;
       }
       
-      const newRecipe = {
+      // 使用 Object.assign 替代展开运算符
+      const newRecipe = Object.assign({}, formData, {
         id: util.generateId(),
-        ...formData,
         kitchenId: currentKitchen.id,
         createTime: new Date().toISOString(),
         updateTime: new Date().toISOString()
-      };
+      });
       recipes.push(newRecipe);
     }
 

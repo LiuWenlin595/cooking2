@@ -4,6 +4,7 @@ const app = getApp();
 Page({
   data: {
     userInfo: null,
+    isAdmin: false,
     stats: {
       recipeCount: 0,
       orderCount: 0,
@@ -15,15 +16,40 @@ Page({
   onLoad() {
     this.loadUserInfo();
     this.loadStats();
+    
+    // 如果未登录，直接提示（不使用 setTimeout）
+    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+    if (!userInfo || !userInfo.nickName) {
+      // 使用 wx.nextTick 确保页面渲染完成后显示
+      wx.nextTick(() => {
+        wx.showModal({
+          title: '欢迎使用',
+          content: '登录后可使用完整功能',
+          confirmText: '立即登录',
+          cancelText: '稍后',
+          success: (res) => {
+            if (res.confirm) {
+              this.getUserInfo();
+            }
+          }
+        });
+      });
+    }
   },
 
   onShow() {
+    const isAdmin = app.checkIsAdmin();
+    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+    this.setData({ 
+      isAdmin,
+      userInfo
+    });
     this.loadStats();
   },
 
   // 加载用户信息
   loadUserInfo() {
-    const userInfo = app.globalData.userInfo;
+    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
     if (userInfo) {
       this.setData({
         userInfo
@@ -71,12 +97,48 @@ Page({
 
   // 获取用户信息
   getUserInfo() {
+    wx.showLoading({
+      title: '登录中...',
+      mask: true
+    });
+
     app.getUserInfo().then((userInfo) => {
+      wx.hideLoading();
+      
       this.setData({
-        userInfo
+        userInfo,
+        isAdmin: app.checkIsAdmin()
       });
+      
+      wx.showToast({
+        title: '登录成功',
+        icon: 'success',
+        duration: 1500
+      });
+      
+      // 刷新统计数据
+      this.loadStats();
     }).catch((err) => {
+      wx.hideLoading();
+      
       console.error('获取用户信息失败:', err);
+      
+      // 根据错误类型显示不同提示
+      let errorMsg = '登录失败，请重试';
+      
+      if (err.errMsg && err.errMsg.indexOf('cancel') > -1) {
+        errorMsg = '您取消了授权';
+      } else if (err.errMsg && err.errMsg.indexOf('fail') > -1) {
+        errorMsg = '登录失败，请检查网络';
+      } else if (err.errMsg) {
+        errorMsg = '登录失败: ' + err.errMsg;
+      }
+      
+      wx.showModal({
+        title: '登录失败',
+        content: errorMsg,
+        showCancel: false
+      });
     });
   },
 
@@ -265,6 +327,115 @@ Page({
   goToSettings() {
     wx.navigateTo({
       url: '/pages/shop/settings/settings'
+    });
+  },
+
+  // 跳转到分类管理
+  goToCategoryList() {
+    // 检查管理员权限
+    if (!app.checkIsAdmin()) {
+      wx.showModal({
+        title: '权限不足',
+        content: '只有管理员才能访问此功能',
+        showCancel: false
+      });
+      return;
+    }
+    
+    wx.navigateTo({
+      url: '/pages/shop/category-list/category-list'
+    });
+  },
+
+  // 跳转到管理后台
+  goToAdmin() {
+    // 检查管理员权限
+    if (!app.checkIsAdmin()) {
+      wx.showModal({
+        title: '权限不足',
+        content: '只有管理员才能访问管理后台',
+        showCancel: false
+      });
+      return;
+    }
+    
+    wx.navigateTo({
+      url: '/pages/admin/admin'
+    });
+  },
+
+
+  // 更换账号
+  switchAccount() {
+    wx.showModal({
+      title: '更换账号',
+      content: '更换账号后需要重新登录并获取权限，确定要继续吗？',
+      success: (res) => {
+        if (res.confirm) {
+          // 清除用户信息（但保留其他数据）
+          wx.removeStorageSync('userInfo');
+          app.globalData.userInfo = null;
+          app.globalData.isAdmin = false;
+          
+          // 重新登录
+          app.getUserInfo().then((userInfo) => {
+            this.setData({ 
+              userInfo,
+              isAdmin: app.checkIsAdmin()
+            });
+            
+            this.loadStats();
+            
+            wx.showToast({
+              title: '账号已切换',
+              icon: 'success'
+            });
+          }).catch((err) => {
+            console.error('登录失败:', err);
+            this.setData({ 
+              userInfo: null,
+              isAdmin: false
+            });
+            
+            wx.showToast({
+              title: '切换失败',
+              icon: 'none'
+            });
+          });
+        }
+      }
+    });
+  },
+
+  // 退出登录
+  logout() {
+    wx.showModal({
+      title: '退出登录',
+      content: '退出后将无法使用需要登录的功能，确定要退出吗？',
+      success: (res) => {
+        if (res.confirm) {
+          // 清除用户信息（但保留其他数据）
+          wx.removeStorageSync('userInfo');
+          app.globalData.userInfo = null;
+          app.globalData.isAdmin = false;
+          
+          this.setData({ 
+            userInfo: null,
+            isAdmin: false,
+            stats: {
+              recipeCount: 0,
+              orderCount: 0,
+              pendingOrderCount: 0,
+              completedOrderCount: 0
+            }
+          });
+          
+          wx.showToast({
+            title: '已退出登录',
+            icon: 'success'
+          });
+        }
+      }
     });
   }
 });

@@ -2,16 +2,24 @@
 <view class="kitchen-page">
   <!-- 顶部店铺信息 -->
   <view class="header-section">
-    <image class="header-bg" src="{{shopInfo.background || '/images/default-bg.jpg'}}" mode="aspectFill"></image>
+    <view class="header-bg {{shopInfo && shopInfo.background ? '' : 'no-bg'}}" wx:if="{{shopInfo && shopInfo.background}}">
+      <image src="{{shopInfo.background}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
+    </view>
+    <view class="header-bg no-bg" wx:else></view>
     <view class="shop-info">
       <view class="shop-header">
         <view class="shop-left">
-          <image class="shop-avatar" src="{{shopInfo.avatar || '/images/default-avatar.png'}}" mode="aspectFill"></image>
+          <view class="shop-avatar {{shopInfo && shopInfo.avatar ? '' : 'no-avatar'}}" wx:if="{{shopInfo && shopInfo.avatar}}">
+            <image src="{{shopInfo.avatar}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
+          </view>
+          <view class="shop-avatar no-avatar" wx:else>
+            <text style="font-size: 48rpx;">🏪</text>
+          </view>
           <view class="shop-details">
-            <text class="shop-name">{{shopInfo.name || '我的小店'}}</text>
-            <text class="kitchen-name" wx:if="{{currentKitchen}}">{{currentKitchen.name}} · 共{{filteredRecipes.length}}个菜谱</text>
+            <text class="shop-name">{{shopInfo && shopInfo.name ? shopInfo.name : '我的小店'}}</text>
+            <text class="kitchen-name" wx:if="{{currentKitchen && currentKitchen.name}}">{{currentKitchen.name}} · 共{{filteredRecipes ? filteredRecipes.length : 0}}个菜谱</text>
             <text class="kitchen-name" wx:else>加载中...</text>
-            <text class="shop-intro" wx:if="{{shopInfo.intro}}">{{shopInfo.intro}}</text>
+            <text class="shop-intro" wx:if="{{shopInfo && shopInfo.intro}}">{{shopInfo.intro}}</text>
           </view>
         </view>
         <view class="shop-right">
@@ -22,6 +30,11 @@
             <text class="iconfont">⚙️</text>
           </view>
         </view>
+      </view>
+      
+      <!-- 未登录提示 -->
+      <view class="login-hint" wx:if="{{!userInfo}}">
+        <text>📌 点击右下角「我的」登录后使用完整功能</text>
       </view>
     </view>
   </view>
@@ -37,7 +50,7 @@
       </view>
     </view>
     <view class="nav-actions">
-      <view class="action-btn {{!isAdmin ? 'disabled' : ''}}" bindtap="addRecipe">
+      <view class="action-btn {{!isAdmin ? 'disabled' : ''}}" bindtap="addRecipe" wx:if="{{isAdmin}}">
         <text>➕ 添加菜谱</text>
       </view>
       <view class="action-btn search-btn" bindtap="showSearchInput">
@@ -61,15 +74,16 @@
       <view class="category-item {{selectedCategory === item.id ? 'active' : ''}}" 
             wx:for="{{categories}}" 
             wx:key="id"
+            wx:for-item="item"
             data-id="{{item.id}}" 
             bindtap="selectCategory">
-        <text>{{item.icon}} {{item.name}}</text>
+        <text>{{item.name}}</text>
       </view>
     </view>
 
     <view class="recipe-list">
-      <view class="recipe-card" wx:for="{{filteredRecipes}}" wx:key="id" data-id="{{item.id}}" bindtap="goToDetail">
-        <image class="recipe-image" src="{{item.image || '/images/default-recipe.png'}}" mode="aspectFill" binderror="onImageError" data-id="{{item.id}}"></image>
+      <view class="recipe-card" wx:for="{{filteredRecipes}}" wx:key="id" wx:for-item="item" data-id="{{item.id}}" bindtap="goToDetail">
+        <image class="recipe-image {{item.image ? '' : 'no-image'}}" src="{{item.image || ''}}" mode="aspectFill" binderror="onImageError" data-id="{{item.id}}"></image>
         <view class="recipe-info">
           <view class="recipe-header">
             <text class="recipe-name">{{item.name}}</text>
@@ -84,7 +98,7 @@
               <text class="tag" wx:if="{{item.difficulty}}">{{item.difficulty}}</text>
               <text class="tag" wx:if="{{item.duration}}">{{item.duration}}分钟</text>
             </view>
-            <view class="add-btn" catchtap="addToCart" data-id="{{item.id}}" wx:if="{{mode === 'order'}}">
+            <view class="add-btn" catchtap="addToCart" data-id="{{item.id}}" wx:if="{{mode === 'order'}}" style="z-index: 999;">
               <text>+</text>
             </view>
             <view class="edit-actions" wx:if="{{mode === 'edit' && isAdmin}}">
@@ -94,7 +108,7 @@
           </view>
         </view>
       </view>
-      <view class="empty" wx:if="{{filteredRecipes.length === 0 && !searchKeyword}}">
+      <view class="empty" wx:if="{{(!filteredRecipes || filteredRecipes.length === 0) && !searchKeyword}}">
         <text class="empty-icon">🍽️</text>
         <text class="empty-text">暂无菜谱</text>
         <text class="empty-tip">点击右上角"添加菜谱"开始添加吧</text>
@@ -105,7 +119,7 @@
           提示：需要管理员权限才能添加菜谱
         </text>
       </view>
-      <view class="empty" wx:if="{{filteredRecipes.length === 0 && searchKeyword}}">
+      <view class="empty" wx:if="{{(!filteredRecipes || filteredRecipes.length === 0) && searchKeyword}}">
         <text class="empty-icon">🔍</text>
         <text class="empty-text">未找到相关菜谱</text>
         <text class="empty-tip">试试其他关键词</text>

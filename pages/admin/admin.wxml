@@ -1,0 +1,101 @@
+<!--pages/admin/admin.wxml-->
+<view class="admin-page">
+  <!-- 头部信息 -->
+  <view class="admin-header">
+    <view class="header-content">
+      <text class="header-title">管理后台</text>
+      <text class="header-subtitle">{{currentKitchen.name}}</text>
+    </view>
+    <view class="admin-badge">
+      <text>👑 管理员</text>
+    </view>
+  </view>
+
+  <!-- 数据统计 -->
+  <view class="stats-section">
+    <view class="stat-card">
+      <text class="stat-number">{{stats.recipeCount}}</text>
+      <text class="stat-label">菜谱数量</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-number">{{stats.categoryCount}}</text>
+      <text class="stat-label">分类数量</text>
+    </view>
+    <view class="stat-card">
+      <text class="stat-number">{{stats.orderCount}}</text>
+      <text class="stat-label">订单总数</text>
+    </view>
+  </view>
+
+  <!-- 管理功能 -->
+  <view class="manage-section">
+    <text class="section-title">内容管理</text>
+    
+    <view class="manage-card" bindtap="manageRecipes">
+      <view class="card-left">
+        <text class="card-icon">📖</text>
+        <view class="card-info">
+          <text class="card-title">菜谱管理</text>
+          <text class="card-desc">添加、编辑、删除菜谱</text>
+        </view>
+      </view>
+      <text class="card-arrow">></text>
+    </view>
+
+    <view class="manage-card" bindtap="manageCategories">
+      <view class="card-left">
+        <text class="card-icon">🏷️</text>
+        <view class="card-info">
+          <text class="card-title">分类管理</text>
+          <text class="card-desc">管理菜谱分类</text>
+        </view>
+      </view>
+      <text class="card-arrow">></text>
+    </view>
+
+    <view class="manage-card" bindtap="manageOrders">
+      <view class="card-left">
+        <text class="card-icon">📋</text>
+        <view class="card-info">
+          <text class="card-title">订单管理</text>
+          <text class="card-desc">查看和处理订单</text>
+        </view>
+      </view>
+      <text class="card-arrow">></text>
+    </view>
+  </view>
+
+  <!-- 系统设置 -->
+  <view class="manage-section">
+    <text class="section-title">系统设置</text>
+    
+    <view class="manage-card" bindtap="manageKitchen">
+      <view class="card-left">
+        <text class="card-icon">🏠</text>
+        <view class="card-info">
+          <text class="card-title">厨房管理</text>
+          <text class="card-desc">管理厨房和管理员</text>
+        </view>
+      </view>
+      <text class="card-arrow">></text>
+    </view>
+
+    <view class="manage-card" bindtap="shopSettings">
+      <view class="card-left">
+        <text class="card-icon">⚙️</text>
+        <view class="card-info">
+          <text class="card-title">店铺设置</text>
+          <text class="card-desc">配置店铺信息</text>
+        </view>
+      </view>
+      <text class="card-arrow">></text>
+    </view>
+  </view>
+
+  <!-- 快捷操作 -->
+  <view class="quick-actions">
+    <view class="action-btn primary" bindtap="addRecipe">
+      <text>+ 添加菜谱</text>
+    </view>
+  </view>
+</view>

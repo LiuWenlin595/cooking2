@@ -14,83 +14,259 @@ Page({
     showSearch: false,
     cartCount: 0,
     isAdmin: false,
-    mode: 'order' // 'order' 或 'edit'
+    mode: 'order', // 'order' 或 'edit'
+    userInfo: null
   },
 
   onLoad(options) {
-    // 延迟加载，确保app.js初始化完成
-    setTimeout(() => {
-      this.loadData();
-      
-      // 处理分享数据
-      if (options.share) {
-        this.handleShareData(options.share);
+    console.log('===== kitchen onLoad 开始 =====');
+    console.log('options:', options);
+    
+    try {
+      // 确保 app 已经初始化
+      if (!app.globalData.shopInfo) {
+        console.log('app未初始化，强制初始化');
+        app.initLocalData();
       }
-    }, 100);
+      
+      // 立即设置默认数据，防止页面空白
+      this.setData({
+        shopInfo: app.globalData.shopInfo || {
+          id: 'shop_001',
+          name: '我的小店',
+          avatar: '',
+          background: '',
+          intro: '欢迎来到我的小店'
+        },
+        currentKitchen: app.globalData.currentKitchen || {
+          id: 'kitchen_001',
+          name: '主厨房',
+          isDefault: true,
+          admins: []
+        },
+        categories: wx.getStorageSync('categories') || [],
+        recipes: [],
+        filteredRecipes: []
+      }, () => {
+        console.log('初始数据设置完成');
+      });
+      
+      // 延迟加载完整数据
+      setTimeout(() => {
+        console.log('开始加载完整数据');
+        this.loadData();
+        
+        // 处理分享数据
+        if (options && options.share) {
+          this.handleShareData(options.share);
+        }
+      }, 300);
+      
+      console.log('===== kitchen onLoad 结束 =====');
+    } catch (error) {
+      console.error('onLoad 发生错误:', error);
+      // 即使出错也设置基础数据
+      this.setData({
+        shopInfo: { id: 'shop_001', name: '我的小店', avatar: '', background: '', intro: '欢迎来到我的小店' },
+        currentKitchen: { id: 'kitchen_001', name: '主厨房', isDefault: true, admins: [] },
+        categories: [],
+        recipes: [],
+        filteredRecipes: []
+      });
+    }
   },
 
   onShow() {
-    this.loadData();
-    this.updateCartCount();
+    console.log('===== kitchen onShow 开始 =====');
+    
+    try {
+      // 更新用户信息和管理员状态
+      const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+      console.log('onShow - userInfo:', userInfo);
+      
+      this.setData({
+        userInfo: userInfo,
+        isAdmin: app.checkIsAdmin()
+      });
+      
+      // ⭐ 关键修复：只重新加载 Storage 中的最新数据，不重新 setData recipes
+      // 避免覆盖当前页面的 recipes 数据
+      const recipes = wx.getStorageSync('recipes') || [];
+      const categories = wx.getStorageSync('categories') || [];
+      const currentKitchen = app.globalData.currentKitchen;
+      
+      if (currentKitchen) {
+        const kitchenRecipes = recipes.filter(r => 
+          !r.kitchenId || r.kitchenId === currentKitchen.id
+        ).map(r => {
+          const category = categories.find(c => c.id === r.categoryId);
+          return Object.assign({}, r, {
+            categoryName: category ? category.name : ''
+          });
+        });
+        
+        // 只在数据真的变化时才更新
+        if (kitchenRecipes.length !== this.data.recipes.length) {
+          console.log('检测到菜谱数量变化，更新数据');
+          console.log('保持当前分类:', this.data.selectedCategory);
+          // ⭐ 只更新 recipes 和 categories，不影响 selectedCategory
+          this.setData({
+            recipes: kitchenRecipes,
+            categories: categories
+          }, () => {
+            // 保持当前分类进行筛选
+            this.filterRecipes();
+          });
+        } else {
+          // 数据没变，只更新筛选结果
+          this.filterRecipes();
+        }
+      }
+      
+      this.updateCartCount();
+      
+      console.log('===== kitchen onShow 结束 =====');
+    } catch (error) {
+      console.error('onShow 发生错误:', error);
+      wx.showToast({
+        title: '页面加载出错',
+        icon: 'none'
+      });
+    }
   },
 
   // 加载数据
   loadData() {
-    const shopInfo = app.globalData.shopInfo;
-    const currentKitchen = app.globalData.currentKitchen;
+    console.log('===== loadData 开始 =====');
     
-    // 检查必要数据
-    if (!shopInfo || !currentKitchen) {
-      wx.showToast({
-        title: '数据加载失败',
-        icon: 'none'
-      });
-      return;
-    }
-    
-    const categories = wx.getStorageSync('categories') || [];
-    const recipes = wx.getStorageSync('recipes') || [];
-    
-    // 过滤当前厨房的菜谱，并添加分类名称
-    const kitchenRecipes = recipes.filter(r => 
-      !r.kitchenId || r.kitchenId === currentKitchen.id
-    ).map(r => {
-      const category = categories.find(c => c.id === r.categoryId);
-      return {
-        ...r,
-        categoryName: category ? category.name : ''
+    try {
+      // 尝试重新初始化数据
+      if (!app.globalData.shopInfo || !app.globalData.currentKitchen) {
+        console.log('globalData数据为空，尝试重新初始化');
+        app.initLocalData();
+        
+        // 再次检查
+        if (!app.globalData.shopInfo) {
+          console.error('初始化后仍然没有shopInfo，使用硬编码默认值');
+        }
+      }
+      
+      const shopInfo = app.globalData.shopInfo;
+      const currentKitchen = app.globalData.currentKitchen;
+      
+      console.log('loadData - shopInfo:', shopInfo);
+      console.log('loadData - currentKitchen:', currentKitchen);
+      
+      // 如果还是没有数据，使用默认值
+      const finalShopInfo = shopInfo || {
+        id: 'shop_001',
+        name: '我的小店',
+        avatar: '',
+        background: '',
+        intro: '欢迎来到我的小店'
       };
-    });
+      
+      const finalCurrentKitchen = currentKitchen || {
+        id: 'kitchen_001',
+        name: '主厨房',
+        isDefault: true,
+        admins: []
+      };
+      
+      console.log('最终使用的数据:');
+      console.log('finalShopInfo:', finalShopInfo);
+      console.log('finalCurrentKitchen:', finalCurrentKitchen);
+      
+      const categories = wx.getStorageSync('categories') || [];
+      const recipes = wx.getStorageSync('recipes') || [];
+      
+      console.log('categories数量:', categories.length);
+      console.log('recipes数量:', recipes.length);
+      
+      // 过滤当前厨房的菜谱，并添加分类名称
+      const kitchenRecipes = recipes.filter(r => 
+        !r.kitchenId || r.kitchenId === finalCurrentKitchen.id
+      ).map(r => {
+        const category = categories.find(c => c.id === r.categoryId);
+        // 使用 Object.assign 替代展开运算符
+        return Object.assign({}, r, {
+          categoryName: category ? category.name : ''
+        });
+      });
 
-    this.setData({
-      shopInfo,
-      currentKitchen,
-      categories,
-      recipes: kitchenRecipes,
-      isAdmin: app.checkIsAdmin()
-    }, () => {
-      // 数据设置完成后再过滤，确保数据同步
-      this.filterRecipes();
-    });
-    // 切换厨房时清空购物车
-    this.clearCartIfKitchenChanged();
+      console.log('kitchenRecipes数量:', kitchenRecipes.length);
+
+      // ⭐ 关键修复：不覆盖 selectedCategory，保持用户的选择
+      const updateData = {
+        shopInfo: finalShopInfo,
+        currentKitchen: finalCurrentKitchen,
+        categories: categories,
+        recipes: kitchenRecipes,
+        isAdmin: app.checkIsAdmin()
+      };
+      
+      // 如果是首次加载（没有 selectedCategory），设置默认值
+      if (!this.data.selectedCategory) {
+        updateData.selectedCategory = 'all';
+      }
+      
+      this.setData(updateData, () => {
+        console.log('setData完成，开始过滤菜谱');
+        console.log('当前分类:', this.data.selectedCategory);
+        // 数据设置完成后再过滤，确保数据同步
+        this.filterRecipes();
+      });
+      
+      // 切换厨房时清空购物车
+      this.clearCartIfKitchenChanged();
+      
+      console.log('===== loadData 结束 =====');
+    } catch (error) {
+      console.error('loadData 发生错误:', error);
+      console.error('错误堆栈:', error.stack);
+      
+      // 即使出错也要设置基础数据
+      this.setData({
+        shopInfo: { id: 'shop_001', name: '我的小店', avatar: '', background: '', intro: '欢迎来到我的小店' },
+        currentKitchen: { id: 'kitchen_001', name: '主厨房', isDefault: true, admins: [] },
+        categories: wx.getStorageSync('categories') || [],
+        recipes: [],
+        filteredRecipes: [],
+        isAdmin: false
+      });
+      
+      wx.showToast({
+        title: '数据加载出错',
+        icon: 'none',
+        duration: 2000
+      });
+    }
   },
 
   // 筛选菜谱
   filterRecipes() {
+    console.log('filterRecipes 开始');
+    console.log('recipes:', this.data.recipes);
+    console.log('selectedCategory:', this.data.selectedCategory);
+    console.log('searchKeyword:', this.data.searchKeyword);
+    
     // 确保 recipes 数据存在
     if (!this.data.recipes || !Array.isArray(this.data.recipes)) {
+      console.log('recipes为空或不是数组');
       this.setData({
         filteredRecipes: []
       });
       return;
     }
     
-    let filtered = [...this.data.recipes];
+    // 使用 slice() 替代展开运算符创建数组副本
+    let filtered = this.data.recipes.slice();
+    console.log('开始筛选，总数:', filtered.length);
     
     // 按分类筛选
     if (this.data.selectedCategory && this.data.selectedCategory !== 'all') {
       filtered = filtered.filter(r => r.categoryId === this.data.selectedCategory);
+      console.log('按分类筛选后:', filtered.length);
     }
     
     // 按搜索关键词筛选
@@ -101,6 +277,7 @@ Page({
         (r.description && r.description.toLowerCase().includes(keyword)) ||
         (r.categoryName && r.categoryName.toLowerCase().includes(keyword))
       );
+      console.log('按关键词筛选后:', filtered.length);
     }
 
     // 必点菜优先
@@ -110,9 +287,12 @@ Page({
       return 0;
     });
 
+    console.log('最终筛选结果:', filtered.length);
     this.setData({
       filteredRecipes: filtered
     });
+    
+    console.log('filterRecipes 完成');
   },
 
   // 选择分类
@@ -176,13 +356,22 @@ Page({
 
   // 添加菜谱到购物车
   addToCart(e) {
-    // 阻止事件冒泡
-    e.stopPropagation();
+    if (e && e.stopPropagation) {
+      e.stopPropagation(); // 阻止事件冒泡
+    }
     
+    // 检查是否已登录
+    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+    if (!userInfo || !userInfo.nickName) {
+      app.requireLogin(() => {
+        // 登录成功后不需要重新调用，用户可以再次点击
+      });
+      return;
+    }
+
     const id = e.currentTarget.dataset.id;
     
     if (!id) {
-      console.error('addToCart: 未获取到菜谱ID');
       wx.showToast({
         title: '操作失败，请重试',
         icon: 'none'
@@ -215,22 +404,34 @@ Page({
     
     // 如果仍然找不到，尝试重新加载数据后再查找
     if (!recipe) {
-      console.warn('addToCart: 未找到菜谱，尝试重新加载数据');
-      // 重新加载数据
+      wx.showToast({
+        title: '正在重新加载...',
+        icon: 'loading',
+        duration: 1000
+      });
+      
       this.loadData();
       
-      // 等待数据加载后再次查找
       setTimeout(() => {
-        recipe = this.data.filteredRecipes && this.data.filteredRecipes.find(r => r.id === id) || 
-                 this.data.recipes && this.data.recipes.find(r => r.id === id);
+        let retryRecipe = this.data.filteredRecipes && this.data.filteredRecipes.find(r => r.id === id) || 
+                          this.data.recipes && this.data.recipes.find(r => r.id === id);
         
-        if (!recipe) {
+        if (!retryRecipe) {
           const allRecipes = wx.getStorageSync('recipes') || [];
-          recipe = allRecipes.find(r => r.id === id);
+          retryRecipe = allRecipes.find(r => r.id === id);
         }
         
-        this.addToCartWithRecipe(id, recipe);
-      }, 200);
+        if (!retryRecipe) {
+          wx.showToast({
+            title: '菜谱不存在，请刷新页面',
+            icon: 'none',
+            duration: 2000
+          });
+          return;
+        }
+        
+        this.addToCartWithRecipe(id, retryRecipe);
+      }, 300);
       return;
     }
     
@@ -266,10 +467,10 @@ Page({
       cart.push({
         recipeId: id,
         recipeName: recipe ? (recipe.name || '未知菜品') : '未知菜品',
-        recipeImage: recipe ? (recipe.image || '/images/default-recipe.png') : '/images/default-recipe.png',
+        recipeImage: recipe ? (recipe.image || '') : '',
         price: recipe ? (recipe.price || 0) : 0,
         quantity: 1,
-        kitchenId: this.data.currentKitchen.id // 记录厨房ID
+        kitchenId: this.data.currentKitchen.id
       });
     }
 
@@ -292,86 +493,22 @@ Page({
     });
   },
 
-  // 跳转到购物车/下单
+  // 跳转到购物车
   goToCart() {
-    const cart = wx.getStorageSync('cart') || [];
-    if (cart.length === 0) {
-      wx.showToast({
-        title: '购物车为空',
-        icon: 'none'
-      });
-      return;
-    }
-    // 显示备注输入框
-    this.showOrderRemarkInput();
-  },
-
-  // 显示订单备注输入
-  showOrderRemarkInput() {
-    wx.showModal({
-      title: '订单备注',
-      editable: true,
-      placeholderText: '请输入订单备注（可选）',
-      success: (res) => {
-        if (res.confirm) {
-          this.createOrder(res.content || '');
-        }
-      }
-    });
-  },
-
-  // 创建订单
-  createOrder(remark = '') {
-    const cart = wx.getStorageSync('cart') || [];
-    if (cart.length === 0) return;
-
-    if (!this.data.currentKitchen) {
-      wx.showToast({
-        title: '厨房信息错误',
-        icon: 'none'
+    // 检查是否已登录
+    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+    if (!userInfo || !userInfo.nickName) {
+      app.requireLogin(() => {
+        wx.navigateTo({
+          url: '/pages/cart/cart'
+        });
       });
       return;
     }
 
-    const order = {
-      id: util.generateId(),
-      kitchenId: this.data.currentKitchen.id,
-      kitchenName: this.data.currentKitchen.name,
-      items: cart.map(item => ({
-        recipeId: item.recipeId,
-        recipeName: item.recipeName,
-        recipeImage: item.recipeImage,
-        price: item.price,
-        quantity: item.quantity
-      })),
-      totalPrice: cart.reduce((sum, item) => sum + item.price * item.quantity, 0),
-      status: 'pending',
-      remark: remark || '', // 添加备注
-      createTime: new Date().toISOString(),
-      updateTime: new Date().toISOString()
-    };
-
-    let orders = wx.getStorageSync('orders') || [];
-    orders.unshift(order);
-    wx.setStorageSync('orders', orders);
-
-    // 清空购物车
-    wx.setStorageSync('cart', []);
-    this.updateCartCount();
-
-    wx.showToast({
-      title: '下单成功',
-      icon: 'success'
+    wx.navigateTo({
+      url: '/pages/cart/cart'
     });
-
-    // 如果开启了订单通知
-    if (app.globalData.orderNotification) {
-      wx.showModal({
-        title: '新订单',
-        content: '您有新的订单，请及时处理',
-        showCancel: false
-      });
-    }
   },
 
   // 检查并清空购物车（如果切换了厨房）
@@ -470,6 +607,15 @@ Page({
 
   // 邀请下单
   inviteOrder() {
+    // 检查是否已登录
+    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+    if (!userInfo || !userInfo.nickName) {
+      app.requireLogin(() => {
+        // 登录成功后用户可以再次点击
+      });
+      return;
+    }
+
     const cart = wx.getStorageSync('cart') || [];
     
     if (cart.length === 0) {
@@ -672,10 +818,10 @@ Page({
             if (existingItem) {
               existingItem.quantity += shareItem.quantity;
             } else {
-              cart.push({
-                ...shareItem,
+              // 使用 Object.assign 替代展开运算符
+              cart.push(Object.assign({}, shareItem, {
                 kitchenId: shareData.kitchenId
-              });
+              }));
             }
           });
 
@@ -684,12 +830,15 @@ Page({
 
           wx.showToast({
             title: '已加入购物车',
-            icon: 'success'
+            icon: 'success',
+            duration: 1500
           });
 
           // 跳转到购物车页面
           setTimeout(() => {
-            this.goToCart();
+            wx.navigateTo({
+              url: '/pages/cart/cart'
+            });
           }, 1500);
         }
       }
@@ -701,8 +850,8 @@ Page({
     const id = e.currentTarget.dataset.id;
     const recipe = this.data.recipes.find(r => r.id === id);
     if (recipe && !recipe.image) {
-      // 如果图片加载失败且没有默认图片，设置默认图片
-      recipe.image = '/images/default-recipe.png';
+      // 图片加载失败，设置为空（使用 CSS 占位符）
+      recipe.image = '';
       this.setData({
         recipes: this.data.recipes
       });

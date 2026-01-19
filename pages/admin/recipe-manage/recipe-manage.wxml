@@ -1,0 +1,84 @@
+<!--pages/admin/recipe-manage/recipe-manage.wxml-->
+<view class="recipe-manage-page">
+  <!-- 搜索和分类 -->
+  <view class="filter-section">
+    <view class="search-box">
+      <input 
+        class="search-input" 
+        placeholder="搜索菜谱名称" 
+        value="{{searchKeyword}}"
+        bindinput="onSearchInput" />
+    </view>
+    
+    <scroll-view class="category-scroll" scroll-x>
+      <view class="category-list">
+        <view 
+          class="category-item {{selectedCategory === 'all' ? 'active' : ''}}"
+          data-id="all"
+          bindtap="selectCategory">
+          <text>全部</text>
+        </view>
+        <view 
+          class="category-item {{selectedCategory === item.id ? 'active' : ''}}"
+          wx:for="{{categories}}"
+          wx:key="id"
+          data-id="{{item.id}}"
+          bindtap="selectCategory">
+          <text>{{item.name}}</text>
+        </view>
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 菜谱列表 -->
+  <view class="recipe-list">
+    <view 
+      class="recipe-card"
+      wx:for="{{recipes}}"
+      wx:key="id"
+      wx:if="{{selectedCategory === 'all' || item.categoryId === selectedCategory}}">
+      
+      <image 
+        class="recipe-image"
+        src="{{item.image || '/images/default-recipe.png'}}"
+        mode="aspectFill"
+        bindtap="viewDetail"
+        data-id="{{item.id}}">
+      </image>
+      
+      <view class="recipe-info">
+        <view class="info-header">
+          <text class="recipe-name">{{item.name}}</text>
+          <text class="recipe-category">{{item.categoryName}}</text>
+        </view>
+        
+        <view class="info-meta">
+          <text class="meta-item">¥{{item.price || 0}}</text>
+          <text class="meta-item">⭐ {{item.rating || 0}}</text>
+          <text class="meta-item" wx:if="{{item.isMustHave}}">必点</text>
+        </view>
+        
+        <view class="info-actions">
+          <view class="action-btn edit" bindtap="editRecipe" data-id="{{item.id}}">
+            <text>编辑</text>
+          </view>
+          <view class="action-btn delete" bindtap="deleteRecipe" data-id="{{item.id}}">
+            <text>删除</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty" wx:if="{{recipes.length === 0}}">
+      <text class="empty-icon">📖</text>
+      <text class="empty-text">暂无菜谱</text>
+      <text class="empty-tip">点击下方按钮添加菜谱</text>
+    </view>
+  </view>
+
+  <!-- 添加按钮 -->
+  <view class="add-button" bindtap="addRecipe">
+    <text>+ 添加菜谱</text>
+  </view>
+</view>

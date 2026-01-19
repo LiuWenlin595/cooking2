@@ -3,10 +3,14 @@
     "pages/kitchen/kitchen",
     "pages/recipe/detail/detail",
     "pages/recipe/add/add",
+    "pages/cart/cart",
     "pages/order/list/list",
     "pages/order/detail/detail",
+    "pages/admin/admin",
+    "pages/admin/recipe-manage/recipe-manage",
     "pages/shop/settings/settings",
     "pages/shop/kitchen-list/kitchen-list",
+    "pages/shop/category-list/category-list",
     "pages/profile/profile"
   ],
   "window": {

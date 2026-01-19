@@ -129,13 +129,13 @@ Page({
       return;
     }
 
-    const shopInfo = {
-      ...app.globalData.shopInfo,
+    // 使用 Object.assign 替代展开运算符
+    const shopInfo = Object.assign({}, app.globalData.shopInfo, {
       name: formData.name,
       avatar: formData.avatar,
       background: formData.background,
       intro: formData.intro
-    };
+    });
 
     app.updateShopInfo(shopInfo);
     

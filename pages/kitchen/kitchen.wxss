@@ -18,6 +18,10 @@
   opacity: 0.3;
 }
 
+.header-bg.no-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
 .shop-info {
   position: absolute;
   top: 0;
@@ -49,6 +53,15 @@
   border-radius: 50%;
   margin-right: 20rpx;
   border: 4rpx solid #fff;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.shop-avatar.no-avatar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .shop-details {
@@ -88,6 +101,35 @@
   background-color: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   font-size: 32rpx;
+}
+
+/* 未登录提示 */
+.login-hint {
+  position: absolute;
+  bottom: 20rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(255, 255, 255, 0.95);
+  color: #9b59b6;
+  padding: 16rpx 32rpx;
+  border-radius: 40rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.15);
+  animation: pulse 2s ease-in-out infinite;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+    opacity: 0.95;
+  }
 }
 
 /* 功能导航栏 */
@@ -226,6 +268,21 @@
   width: 200rpx;
   height: 200rpx;
   flex-shrink: 0;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recipe-image.no-image {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+}
+
+.recipe-image.no-image::after {
+  content: '🍽️';
+  font-size: 80rpx;
+  opacity: 0.5;
 }
 
 .recipe-info {
@@ -295,6 +352,9 @@
   justify-content: center;
   font-size: 36rpx;
   font-weight: bold;
+  position: relative;
+  z-index: 100;
+  cursor: pointer;
 }
 
 .edit-actions {

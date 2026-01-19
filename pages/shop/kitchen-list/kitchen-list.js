@@ -174,8 +174,15 @@ Page({
   manageAdmins(e) {
     const kitchenId = e.currentTarget.dataset.id;
     const kitchen = this.data.kitchens.find(k => k.id === kitchenId);
-    if (!kitchen) return;
-
+    
+    if (!kitchen) {
+      wx.showToast({
+        title: '厨房不存在',
+        icon: 'none'
+      });
+      return;
+    }
+    
     wx.showActionSheet({
       itemList: ['添加管理员', '查看管理员列表'],
       success: (res) => {
@@ -192,43 +199,69 @@ Page({
   addAdmin(kitchenId) {
     wx.showModal({
       title: '添加管理员',
+      content: '请输入要添加为管理员的微信昵称',
       editable: true,
-      placeholderText: '请输入管理员昵称',
+      placeholderText: '输入微信昵称',
       success: (res) => {
         if (res.confirm && res.content) {
-          const shopInfo = app.globalData.shopInfo;
-          const kitchen = shopInfo.kitchens.find(k => k.id === kitchenId);
-          if (kitchen) {
-            const admin = {
-              nickName: res.content,
-              addTime: new Date().toISOString()
-            };
-            
-            if (!kitchen.admins) {
-              kitchen.admins = [];
-            }
-            
-            // 检查是否已存在
-            const exists = kitchen.admins.some(a => a.nickName === admin.nickName);
-            if (exists) {
-              wx.showToast({
-                title: '管理员已存在',
-                icon: 'none'
-              });
-              return;
-            }
-            
-            kitchen.admins.push(admin);
-            app.updateShopInfo(shopInfo);
-            this.loadKitchens();
-            
+          const nickName = res.content.trim();
+          
+          if (!nickName) {
             wx.showToast({
-              title: '添加成功',
-              icon: 'success'
+              title: '昵称不能为空',
+              icon: 'none'
             });
+            return;
           }
+          
+          this.addAdminToKitchen(kitchenId, nickName);
         }
       }
+    });
+  },
+
+  // 添加管理员到厨房
+  addAdminToKitchen(kitchenId, nickName) {
+    const shopInfo = app.globalData.shopInfo;
+    const kitchen = shopInfo.kitchens.find(k => k.id === kitchenId);
+    
+    if (!kitchen) {
+      wx.showToast({
+        title: '厨房不存在',
+        icon: 'none'
+      });
+      return;
+    }
+
+    if (!kitchen.admins) {
+      kitchen.admins = [];
+    }
+
+    // 检查是否已存在
+    const exists = kitchen.admins.some(a => a.nickName === nickName);
+
+    if (exists) {
+      wx.showToast({
+        title: '该管理员已存在',
+        icon: 'none'
+      });
+      return;
+    }
+
+    // 添加管理员
+    const admin = {
+      nickName: nickName,
+      avatarUrl: '',
+      addTime: new Date().toISOString()
+    };
+
+    kitchen.admins.push(admin);
+    app.updateShopInfo(shopInfo);
+    this.loadKitchens();
+
+    wx.showToast({
+      title: '添加成功',
+      icon: 'success'
     });
   },
 

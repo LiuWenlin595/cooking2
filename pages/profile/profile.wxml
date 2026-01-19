@@ -7,6 +7,9 @@
       <view class="user-details">
         <text class="user-name">{{userInfo.nickName}}</text>
         <text class="user-desc">欢迎使用电子菜单</text>
+        <view class="user-badge" wx:if="{{isAdmin}}">
+          <text>👑 管理员</text>
+        </view>
       </view>
     </view>
     <view class="user-info" wx:else>
@@ -45,11 +48,30 @@
 
   <!-- 功能菜单 -->
   <view class="menu-section">
+    <!-- 管理后台入口（仅管理员可见） -->
+    <view class="menu-item admin-item" bindtap="goToAdmin" wx:if="{{isAdmin}}">
+      <view class="menu-left">
+        <text class="menu-icon">👑</text>
+        <text class="menu-text">管理后台</text>
+        <text class="menu-desc">管理员专用功能</text>
+      </view>
+      <text class="menu-arrow">></text>
+    </view>
+
     <view class="menu-item" bindtap="goToSettings">
       <view class="menu-left">
         <text class="menu-icon">⚙️</text>
         <text class="menu-text">店铺设置</text>
         <text class="menu-desc">管理厨房、管理员</text>
+      </view>
+      <text class="menu-arrow">></text>
+    </view>
+
+    <view class="menu-item" bindtap="goToCategoryList" wx:if="{{isAdmin}}">
+      <view class="menu-left">
+        <text class="menu-icon">🏷️</text>
+        <text class="menu-text">分类管理</text>
+        <text class="menu-desc">管理菜谱分类</text>
       </view>
       <text class="menu-arrow">></text>
     </view>
@@ -75,6 +97,26 @@
       <view class="menu-left">
         <text class="menu-icon">🗑️</text>
         <text class="menu-text">清空数据</text>
+      </view>
+      <text class="menu-arrow">></text>
+    </view>
+  </view>
+
+  <!-- 账号管理 -->
+  <view class="menu-section" wx:if="{{userInfo}}">
+    <view class="menu-item" bindtap="switchAccount">
+      <view class="menu-left">
+        <text class="menu-icon">🔄</text>
+        <text class="menu-text">更换账号</text>
+        <text class="menu-desc">重新登录</text>
+      </view>
+      <text class="menu-arrow">></text>
+    </view>
+
+    <view class="menu-item danger" bindtap="logout">
+      <view class="menu-left">
+        <text class="menu-icon">🚪</text>
+        <text class="menu-text">退出登录</text>
       </view>
       <text class="menu-arrow">></text>
     </view>

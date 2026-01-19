@@ -11,16 +11,43 @@ Page({
   },
 
   onLoad() {
-    // 延迟加载，确保app.js初始化完成
-    setTimeout(() => {
-      this.setData({
-        isAdmin: app.checkIsAdmin()
+    // ⭐ 修复：检查登录状态，不使用递归回调
+    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+    if (!userInfo || !userInfo.nickName) {
+      // 显示提示并跳转
+      wx.showModal({
+        title: '需要登录',
+        content: '查看订单需要先登录',
+        confirmText: '去登录',
+        cancelText: '返回',
+        success: (res) => {
+          if (res.confirm) {
+            wx.switchTab({
+              url: '/pages/profile/profile'
+            });
+          } else {
+            wx.navigateBack();
+          }
+        }
       });
-      this.loadOrders();
-    }, 100);
+      return;
+    }
+
+    // 设置管理员状态并加载订单
+    this.setData({
+      isAdmin: app.checkIsAdmin()
+    });
+    this.loadOrders();
   },
 
   onShow() {
+    // 检查是否已登录
+    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+    if (!userInfo || !userInfo.nickName) {
+      // 未登录则返回
+      return;
+    }
+
     // 重新检查管理员权限
     this.setData({
       isAdmin: app.checkIsAdmin()
@@ -56,7 +83,8 @@ Page({
 
   // 筛选订单
   filterOrders() {
-    let filtered = [...this.data.orders];
+    // 使用 slice() 替代展开运算符
+    let filtered = this.data.orders.slice();
     
     // 按状态筛选
     if (this.data.statusFilter !== 'all') {
