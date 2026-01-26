@@ -11,33 +11,72 @@ Page({
   },
 
   onLoad() {
-    // ⭐ 修复：检查登录状态，不使用递归回调
-    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
-    if (!userInfo || !userInfo.nickName) {
-      // 显示提示并跳转
-      wx.showModal({
-        title: '需要登录',
-        content: '查看订单需要先登录',
-        confirmText: '去登录',
-        cancelText: '返回',
-        success: (res) => {
-          if (res.confirm) {
-            wx.switchTab({
-              url: '/pages/profile/profile'
-            });
-          } else {
-            wx.navigateBack();
-          }
-        }
-      });
-      return;
-    }
-
-    // 设置管理员状态并加载订单
+    console.log('===== order/list onLoad 开始 =====');
+    
+    // ⭐ 修复：立即设置默认数据，确保页面有内容显示（防止真机白屏）
     this.setData({
-      isAdmin: app.checkIsAdmin()
+      orders: [],
+      filteredOrders: [],
+      statusFilter: 'all',
+      isAdmin: false
+    }, () => {
+      console.log('✅ 默认数据设置完成');
     });
-    this.loadOrders();
+    
+    try {
+      // 检查登录状态
+      const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+      if (!userInfo || !userInfo.nickName) {
+        // ⭐ 修复：即使未登录也显示页面，延迟显示提示
+        if (typeof wx.nextTick === 'function') {
+          wx.nextTick(() => {
+            wx.showModal({
+              title: '需要登录',
+              content: '查看订单需要先登录',
+              confirmText: '去登录',
+              cancelText: '知道了',
+              success: (res) => {
+                if (res.confirm) {
+                  wx.switchTab({
+                    url: '/pages/profile/profile'
+                  });
+                }
+              }
+            });
+          });
+        } else {
+          setTimeout(() => {
+            wx.showModal({
+              title: '需要登录',
+              content: '查看订单需要先登录',
+              confirmText: '去登录',
+              cancelText: '知道了',
+              success: (res) => {
+                if (res.confirm) {
+                  wx.switchTab({
+                    url: '/pages/profile/profile'
+                  });
+                }
+              }
+            });
+          }, 500);
+        }
+        return;
+      }
+
+      // 设置管理员状态并加载订单
+      try {
+        this.setData({
+          isAdmin: app.checkIsAdmin()
+        });
+        this.loadOrders();
+      } catch (e) {
+        console.error('加载订单数据出错:', e);
+      }
+    } catch (error) {
+      console.error('onLoad 发生错误:', error);
+      // 即使出错也保持默认数据显示
+    }
   },
 
   onShow() {
@@ -57,28 +96,58 @@ Page({
 
   // 加载订单
   loadOrders() {
-    const orders = wx.getStorageSync('orders') || [];
-    const currentKitchen = app.globalData.currentKitchen;
-    
-    // 过滤当前厨房的订单
-    let kitchenOrders = orders;
-    if (currentKitchen) {
-      kitchenOrders = orders.filter(o => o.kitchenId === currentKitchen.id);
-    }
-    
-    // 按创建时间倒序排列
-    kitchenOrders.sort((a, b) => {
+    try {
+      let orders = [];
       try {
-        return new Date(b.createTime) - new Date(a.createTime);
+        orders = wx.getStorageSync('orders') || [];
       } catch (e) {
-        return 0;
+        console.error('读取订单数据失败:', e);
       }
-    });
-    
-    this.setData({
-      orders: kitchenOrders
-    });
-    this.filterOrders();
+      
+      let currentKitchen = null;
+      try {
+        currentKitchen = app.globalData.currentKitchen;
+      } catch (e) {
+        console.error('获取厨房信息失败:', e);
+      }
+      
+      // 过滤当前厨房的订单
+      let kitchenOrders = orders;
+      if (currentKitchen && currentKitchen.id) {
+        kitchenOrders = orders.filter(o => o.kitchenId === currentKitchen.id);
+      }
+      
+      // 按创建时间倒序排列
+      try {
+        kitchenOrders.sort((a, b) => {
+          try {
+            if (!a.createTime || !b.createTime) return 0;
+            return new Date(b.createTime) - new Date(a.createTime);
+          } catch (e) {
+            return 0;
+          }
+        });
+      } catch (e) {
+        console.error('排序订单失败:', e);
+      }
+      
+      this.setData({
+        orders: kitchenOrders
+      }, () => {
+        try {
+          this.filterOrders();
+        } catch (e) {
+          console.error('过滤订单失败:', e);
+        }
+      });
+    } catch (error) {
+      console.error('loadOrders 发生错误:', error);
+      // 即使出错也设置空数组
+      this.setData({
+        orders: [],
+        filteredOrders: []
+      });
+    }
   },
 
   // 筛选订单

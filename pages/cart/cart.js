@@ -11,29 +11,70 @@ Page({
   },
 
   onLoad() {
-    // ⭐ 修复：检查登录状态，不使用递归回调
-    const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
-    if (!userInfo || !userInfo.nickName) {
-      // 显示提示并跳转
-      wx.showModal({
-        title: '需要登录',
-        content: '查看购物车需要先登录',
-        confirmText: '去登录',
-        cancelText: '返回',
-        success: (res) => {
-          if (res.confirm) {
-            wx.switchTab({
-              url: '/pages/profile/profile'
+    console.log('===== cart onLoad 开始 =====');
+    
+    // ⭐ 修复：立即设置默认数据，确保页面有内容显示（防止真机白屏）
+    this.setData({
+      cart: [],
+      totalPrice: 0,
+      totalCount: 0,
+      currentKitchen: null
+    }, () => {
+      console.log('✅ 默认数据设置完成');
+    });
+    
+    try {
+      // 检查登录状态
+      let userInfo = null;
+      try {
+        userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+      } catch (e) {
+        console.error('读取用户信息失败:', e);
+      }
+      
+      if (!userInfo || !userInfo.nickName) {
+        // ⭐ 修复：延迟显示提示，确保页面先渲染
+        if (typeof wx.nextTick === 'function') {
+          wx.nextTick(() => {
+            wx.showModal({
+              title: '需要登录',
+              content: '查看购物车需要先登录',
+              confirmText: '去登录',
+              cancelText: '知道了',
+              success: (res) => {
+                if (res.confirm) {
+                  wx.switchTab({
+                    url: '/pages/profile/profile'
+                  });
+                }
+              }
             });
-          } else {
-            wx.navigateBack();
-          }
+          });
+        } else {
+          setTimeout(() => {
+            wx.showModal({
+              title: '需要登录',
+              content: '查看购物车需要先登录',
+              confirmText: '去登录',
+              cancelText: '知道了',
+              success: (res) => {
+                if (res.confirm) {
+                  wx.switchTab({
+                    url: '/pages/profile/profile'
+                  });
+                }
+              }
+            });
+          }, 500);
         }
-      });
-      return;
-    }
+        return;
+      }
 
-    this.loadCart();
+      this.loadCart();
+    } catch (error) {
+      console.error('onLoad 发生错误:', error);
+      // 即使出错也保持默认数据显示
+    }
   },
 
   onShow() {
@@ -49,27 +90,56 @@ Page({
 
   // 加载购物车数据
   loadCart() {
-    const cart = wx.getStorageSync('cart') || [];
-    const currentKitchen = app.globalData.currentKitchen;
-    
-    // 为每个商品计算小计
-    const cartWithSubtotal = cart.map(item => {
-      return Object.assign({}, item, {
-        subtotal: (item.price * item.quantity).toFixed(2)
-      });
-    });
-    
-    // 计算总价和总数量
-    const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+    try {
+      let cart = [];
+      let currentKitchen = null;
+      
+      try {
+        cart = wx.getStorageSync('cart') || [];
+        currentKitchen = app.globalData.currentKitchen;
+      } catch (e) {
+        console.error('读取购物车数据失败:', e);
+      }
+      
+      // 为每个商品计算小计
+      let cartWithSubtotal = [];
+      try {
+        cartWithSubtotal = cart.map(item => {
+          return Object.assign({}, item, {
+            subtotal: (item.price * item.quantity).toFixed(2)
+          });
+        });
+      } catch (e) {
+        console.error('处理购物车数据失败:', e);
+      }
+      
+      // 计算总价和总数量
+      let totalPrice = 0;
+      let totalCount = 0;
+      try {
+        totalPrice = cart.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 0), 0);
+        totalCount = cart.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      } catch (e) {
+        console.error('计算总价失败:', e);
+      }
 
-    this.setData({
-      cart: cartWithSubtotal,
-      currentKitchen,
-      totalPrice,
-      totalPriceStr: totalPrice.toFixed(2),
-      totalCount
-    });
+      this.setData({
+        cart: cartWithSubtotal,
+        currentKitchen: currentKitchen,
+        totalPrice: totalPrice,
+        totalPriceStr: totalPrice.toFixed(2),
+        totalCount: totalCount
+      });
+    } catch (error) {
+      console.error('loadCart 发生错误:', error);
+      // 即使出错也设置默认值
+      this.setData({
+        cart: [],
+        totalPrice: 0,
+        totalPriceStr: '0.00',
+        totalCount: 0
+      });
+    }
   },
 
   // 增加数量

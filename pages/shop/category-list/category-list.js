@@ -8,11 +8,25 @@ Page({
   },
 
   onLoad() {
-    // 检查管理员权限
-    if (!this.checkAdminPermission()) {
-      return;
+    console.log('===== shop/category-list onLoad 开始 =====');
+    
+    // ⭐ 修复：立即设置默认数据，确保页面有内容显示（防止真机白屏）
+    this.setData({
+      categories: []
+    }, () => {
+      console.log('✅ 默认数据设置完成');
+    });
+    
+    try {
+      // 检查管理员权限（延迟检查，确保页面先显示）
+      if (!this.checkAdminPermission()) {
+        return;
+      }
+      this.loadCategories();
+    } catch (error) {
+      console.error('onLoad 发生错误:', error);
+      // 即使出错也保持默认数据显示
     }
-    this.loadCategories();
   },
 
   onShow() {
@@ -25,29 +39,69 @@ Page({
 
   // 检查管理员权限
   checkAdminPermission() {
-    const isAdmin = app.checkIsAdmin();
-    
-    if (!isAdmin) {
-      wx.showModal({
-        title: '权限不足',
-        content: '只有管理员才能管理分类',
-        showCancel: false,
-        success: () => {
-          wx.navigateBack();
+    try {
+      let isAdmin = false;
+      try {
+        isAdmin = app.checkIsAdmin();
+      } catch (e) {
+        console.error('检查管理员权限失败:', e);
+      }
+      
+      if (!isAdmin) {
+        // ⭐ 修复：延迟显示提示，确保页面先渲染
+        if (typeof wx.nextTick === 'function') {
+          wx.nextTick(() => {
+            wx.showModal({
+              title: '权限不足',
+              content: '只有管理员才能管理分类',
+              showCancel: false,
+              success: () => {
+                wx.navigateBack();
+              }
+            });
+          });
+        } else {
+          setTimeout(() => {
+            wx.showModal({
+              title: '权限不足',
+              content: '只有管理员才能管理分类',
+              showCancel: false,
+              success: () => {
+                wx.navigateBack();
+              }
+            });
+          }, 500);
         }
-      });
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('checkAdminPermission 发生错误:', error);
       return false;
     }
-    
-    return true;
   },
 
   // 加载分类列表
   loadCategories() {
-    const categories = wx.getStorageSync('categories') || [];
-    this.setData({
-      categories
-    });
+    try {
+      let categories = [];
+      try {
+        categories = wx.getStorageSync('categories') || [];
+      } catch (e) {
+        console.error('读取分类数据失败:', e);
+      }
+      
+      this.setData({
+        categories: categories
+      });
+    } catch (error) {
+      console.error('loadCategories 发生错误:', error);
+      // 即使出错也设置空数组
+      this.setData({
+        categories: []
+      });
+    }
   },
 
   // 添加分类

@@ -16,9 +16,10 @@
       <view class="user-avatar default-avatar">👤</view>
       <view class="user-details">
         <text class="user-name">未登录</text>
-        <view class="login-btn" bindtap="getUserInfo">
-          <text>点击登录</text>
-        </view>
+        <!-- ⭐ 修复：使用 button 组件，确保点击事件正确触发 -->
+        <button class="login-btn" bindtap="getUserInfo" type="primary" size="mini">
+          点击登录
+        </button>
       </view>
     </view>
   </view>

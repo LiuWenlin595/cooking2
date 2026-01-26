@@ -29,20 +29,61 @@ Page({
   },
 
   onLoad(options) {
-    // 检查管理员权限
-    if (!this.checkAdminPermission()) {
-      return;
-    }
+    console.log('===== recipe/add onLoad 开始 =====');
     
-    const id = options.id;
-    if (id) {
-      this.setData({
-        recipeId: id,
-        isEdit: true
-      });
-      this.loadRecipe(id);
-    } else {
-      this.loadCategories();
+    // ⭐ 修复：立即设置默认数据，确保页面有内容显示（防止真机白屏）
+    this.setData({
+      recipeId: null,
+      isEdit: false,
+      categories: [],
+      categoryIndex: 0,
+      selectedCategoryName: '',
+      formData: {
+        name: '',
+        categoryId: '',
+        description: '',
+        image: '',
+        serving: '',
+        duration: '',
+        difficulty: '',
+        recipeLink: '',
+        isMustHave: false,
+        price: 0,
+        rating: 0,
+        monthlySales: 0
+      },
+      difficultyOptions: ['简单', '中等', '困难'],
+      difficultyIndex: 0,
+      selectedDifficulty: ''
+    }, () => {
+      console.log('✅ 默认数据设置完成');
+    });
+    
+    try {
+      // 检查管理员权限（延迟检查，确保页面先显示）
+      if (!this.checkAdminPermission()) {
+        // 权限检查失败时，延迟返回，让页面先渲染
+        if (typeof wx.nextTick === 'function') {
+          wx.nextTick(() => {
+            // 已经在 checkAdminPermission 中处理了返回逻辑
+          });
+        }
+        return;
+      }
+      
+      const id = options ? options.id : null;
+      if (id) {
+        this.setData({
+          recipeId: id,
+          isEdit: true
+        });
+        this.loadRecipe(id);
+      } else {
+        this.loadCategories();
+      }
+    } catch (error) {
+      console.error('onLoad 发生错误:', error);
+      // 即使出错也保持默认数据显示
     }
   },
 
@@ -72,19 +113,34 @@ Page({
 
   // 加载分类
   loadCategories() {
-    const categories = wx.getStorageSync('categories') || [];
-    this.setData({
-      categories
-    });
-    // 如果有选中的分类，设置索引
-    if (this.data.formData.categoryId) {
-      const index = categories.findIndex(c => c.id === this.data.formData.categoryId);
-      if (index !== -1) {
-        this.setData({
-          categoryIndex: index,
-          selectedCategoryName: categories[index].name
-        });
+    try {
+      let categories = [];
+      try {
+        categories = wx.getStorageSync('categories') || [];
+      } catch (e) {
+        console.error('读取分类数据失败:', e);
       }
+      
+      this.setData({
+        categories
+      });
+      
+      // 如果有选中的分类，设置索引
+      if (this.data.formData && this.data.formData.categoryId) {
+        const index = categories.findIndex(c => c.id === this.data.formData.categoryId);
+        if (index !== -1) {
+          this.setData({
+            categoryIndex: index,
+            selectedCategoryName: categories[index].name
+          });
+        }
+      }
+    } catch (error) {
+      console.error('loadCategories 发生错误:', error);
+      // 即使出错也设置空数组
+      this.setData({
+        categories: []
+      });
     }
   },
 

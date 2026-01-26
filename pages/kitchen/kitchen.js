@@ -21,57 +21,117 @@ Page({
   onLoad(options) {
     console.log('===== kitchen onLoad 开始 =====');
     console.log('options:', options);
+    console.log('app.isInitialized:', app.globalData.isInitialized);
+    
+    // ⭐ 修复：立即设置默认数据，确保页面有内容显示（防止真机白屏）
+    const defaultShopInfo = {
+      id: 'shop_001',
+      name: '我的小店',
+      avatar: '',
+      background: '',
+      intro: '欢迎来到我的小店'
+    };
+    const defaultKitchen = {
+      id: 'kitchen_001',
+      name: '主厨房',
+      isDefault: true,
+      admins: []
+    };
     
     try {
-      // 确保 app 已经初始化
-      if (!app.globalData.shopInfo) {
-        console.log('app未初始化，强制初始化');
-        app.initLocalData();
-      }
-      
-      // 立即设置默认数据，防止页面空白
+      // ⭐ 关键修复：立即设置默认数据，不等待任何异步操作
       this.setData({
-        shopInfo: app.globalData.shopInfo || {
-          id: 'shop_001',
-          name: '我的小店',
-          avatar: '',
-          background: '',
-          intro: '欢迎来到我的小店'
-        },
-        currentKitchen: app.globalData.currentKitchen || {
-          id: 'kitchen_001',
-          name: '主厨房',
-          isDefault: true,
-          admins: []
-        },
-        categories: wx.getStorageSync('categories') || [],
+        shopInfo: defaultShopInfo,
+        currentKitchen: defaultKitchen,
+        categories: [],
         recipes: [],
-        filteredRecipes: []
+        filteredRecipes: [],
+        userInfo: null,
+        isAdmin: false,
+        cartCount: 0,
+        mode: 'order',
+        selectedCategory: 'all',
+        searchKeyword: '',
+        showSearch: false
       }, () => {
-        console.log('初始数据设置完成');
+        console.log('✅ 默认数据设置完成，页面应该可以显示了');
+        console.log('当前 shopInfo:', this.data.shopInfo);
+        console.log('当前 currentKitchen:', this.data.currentKitchen);
       });
       
-      // 延迟加载完整数据
-      setTimeout(() => {
-        console.log('开始加载完整数据');
-        this.loadData();
-        
-        // 处理分享数据
-        if (options && options.share) {
-          this.handleShareData(options.share);
+      // 确保 app 已经初始化（使用 try-catch 包裹，避免阻塞）
+      try {
+        // 如果 app 还没初始化，等待一下再初始化
+        if (!app.globalData.isInitialized) {
+          console.log('app未初始化，等待初始化...');
+          // 尝试初始化
+          if (!app.globalData.shopInfo) {
+            app.initLocalData();
+          }
         }
-      }, 300);
+      } catch (initError) {
+        console.error('app初始化出错:', initError);
+        // 继续执行，使用默认数据
+      }
+      
+      // ⭐ 修复：使用 wx.nextTick 替代 setTimeout，确保在下一帧执行（真机兼容性更好）
+      // 如果 nextTick 不可用，使用 requestAnimationFrame 或直接执行
+      if (typeof wx.nextTick === 'function') {
+        wx.nextTick(() => {
+          this.loadData();
+          // 处理分享数据
+          if (options && options.share) {
+            try {
+              this.handleShareData(options.share);
+            } catch (shareError) {
+              console.error('处理分享数据出错:', shareError);
+            }
+          }
+        });
+      } else {
+        // 降级方案：使用 requestAnimationFrame 或直接执行
+        const loadData = () => {
+          try {
+            this.loadData();
+            if (options && options.share) {
+              this.handleShareData(options.share);
+            }
+          } catch (err) {
+            console.error('加载数据出错:', err);
+          }
+        };
+        
+        // 尝试使用 requestAnimationFrame
+        if (typeof requestAnimationFrame === 'function') {
+          requestAnimationFrame(loadData);
+        } else {
+          // 直接执行（真机上通常已经初始化完成）
+          loadData();
+        }
+      }
       
       console.log('===== kitchen onLoad 结束 =====');
     } catch (error) {
       console.error('onLoad 发生错误:', error);
-      // 即使出错也设置基础数据
+      console.error('错误堆栈:', error.stack);
+      
+      // ⭐ 修复：即使出错也设置基础数据，确保页面能显示
       this.setData({
         shopInfo: { id: 'shop_001', name: '我的小店', avatar: '', background: '', intro: '欢迎来到我的小店' },
         currentKitchen: { id: 'kitchen_001', name: '主厨房', isDefault: true, admins: [] },
         categories: [],
         recipes: [],
-        filteredRecipes: []
+        filteredRecipes: [],
+        userInfo: null,
+        isAdmin: false,
+        cartCount: 0
+      });
+      
+      // 显示错误提示（可选）
+      wx.showToast({
+        title: '页面加载出错，请重试',
+        icon: 'none',
+        duration: 2000
       });
     }
   },
@@ -80,58 +140,93 @@ Page({
     console.log('===== kitchen onShow 开始 =====');
     
     try {
-      // 更新用户信息和管理员状态
-      const userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+      // ⭐ 修复：安全地更新用户信息和管理员状态
+      let userInfo = null;
+      try {
+        userInfo = app.globalData.userInfo || wx.getStorageSync('userInfo');
+      } catch (e) {
+        console.error('读取 userInfo 失败:', e);
+      }
+      
       console.log('onShow - userInfo:', userInfo);
+      
+      let isAdmin = false;
+      try {
+        isAdmin = app.checkIsAdmin();
+      } catch (e) {
+        console.error('检查管理员状态失败:', e);
+      }
       
       this.setData({
         userInfo: userInfo,
-        isAdmin: app.checkIsAdmin()
+        isAdmin: isAdmin
       });
       
-      // ⭐ 关键修复：只重新加载 Storage 中的最新数据，不重新 setData recipes
-      // 避免覆盖当前页面的 recipes 数据
-      const recipes = wx.getStorageSync('recipes') || [];
-      const categories = wx.getStorageSync('categories') || [];
-      const currentKitchen = app.globalData.currentKitchen;
+      // ⭐ 修复：安全地重新加载 Storage 中的最新数据
+      let recipes = [];
+      let categories = [];
+      let currentKitchen = null;
+      
+      try {
+        recipes = wx.getStorageSync('recipes') || [];
+        categories = wx.getStorageSync('categories') || [];
+        currentKitchen = app.globalData.currentKitchen;
+      } catch (e) {
+        console.error('读取 Storage 数据失败:', e);
+      }
       
       if (currentKitchen) {
-        const kitchenRecipes = recipes.filter(r => 
-          !r.kitchenId || r.kitchenId === currentKitchen.id
-        ).map(r => {
-          const category = categories.find(c => c.id === r.categoryId);
-          return Object.assign({}, r, {
-            categoryName: category ? category.name : ''
+        try {
+          const kitchenRecipes = recipes.filter(r => 
+            !r.kitchenId || r.kitchenId === currentKitchen.id
+          ).map(r => {
+            const category = categories.find(c => c.id === r.categoryId);
+            return Object.assign({}, r, {
+              categoryName: category ? category.name : ''
+            });
           });
-        });
-        
-        // 只在数据真的变化时才更新
-        if (kitchenRecipes.length !== this.data.recipes.length) {
-          console.log('检测到菜谱数量变化，更新数据');
-          console.log('保持当前分类:', this.data.selectedCategory);
-          // ⭐ 只更新 recipes 和 categories，不影响 selectedCategory
-          this.setData({
-            recipes: kitchenRecipes,
-            categories: categories
-          }, () => {
-            // 保持当前分类进行筛选
-            this.filterRecipes();
-          });
-        } else {
-          // 数据没变，只更新筛选结果
-          this.filterRecipes();
+          
+          // 只在数据真的变化时才更新
+          if (kitchenRecipes.length !== (this.data.recipes ? this.data.recipes.length : 0)) {
+            console.log('检测到菜谱数量变化，更新数据');
+            console.log('保持当前分类:', this.data.selectedCategory);
+            // ⭐ 只更新 recipes 和 categories，不影响 selectedCategory
+            this.setData({
+              recipes: kitchenRecipes,
+              categories: categories
+            }, () => {
+              // 保持当前分类进行筛选
+              try {
+                this.filterRecipes();
+              } catch (e) {
+                console.error('过滤菜谱失败:', e);
+              }
+            });
+          } else {
+            // 数据没变，只更新筛选结果
+            try {
+              this.filterRecipes();
+            } catch (e) {
+              console.error('过滤菜谱失败:', e);
+            }
+          }
+        } catch (filterError) {
+          console.error('处理菜谱数据失败:', filterError);
         }
       }
       
-      this.updateCartCount();
+      // 更新购物车数量
+      try {
+        this.updateCartCount();
+      } catch (e) {
+        console.error('更新购物车数量失败:', e);
+      }
       
       console.log('===== kitchen onShow 结束 =====');
     } catch (error) {
       console.error('onShow 发生错误:', error);
-      wx.showToast({
-        title: '页面加载出错',
-        icon: 'none'
-      });
+      console.error('错误堆栈:', error.stack);
+      // 不显示错误提示，避免干扰用户
     }
   },
 
@@ -140,22 +235,23 @@ Page({
     console.log('===== loadData 开始 =====');
     
     try {
-      // 尝试重新初始化数据
-      if (!app.globalData.shopInfo || !app.globalData.currentKitchen) {
-        console.log('globalData数据为空，尝试重新初始化');
-        app.initLocalData();
-        
-        // 再次检查
-        if (!app.globalData.shopInfo) {
-          console.error('初始化后仍然没有shopInfo，使用硬编码默认值');
+      // ⭐ 修复：使用 try-catch 包裹所有 Storage 操作，避免真机上阻塞
+      let shopInfo, currentKitchen, categories, recipes;
+      
+      try {
+        // 尝试重新初始化数据
+        if (!app.globalData.shopInfo || !app.globalData.currentKitchen) {
+          console.log('globalData数据为空，尝试重新初始化');
+          app.initLocalData();
         }
+        
+        shopInfo = app.globalData.shopInfo;
+        currentKitchen = app.globalData.currentKitchen;
+      } catch (initError) {
+        console.error('初始化数据出错:', initError);
+        shopInfo = null;
+        currentKitchen = null;
       }
-      
-      const shopInfo = app.globalData.shopInfo;
-      const currentKitchen = app.globalData.currentKitchen;
-      
-      console.log('loadData - shopInfo:', shopInfo);
-      console.log('loadData - currentKitchen:', currentKitchen);
       
       // 如果还是没有数据，使用默认值
       const finalShopInfo = shopInfo || {
@@ -173,26 +269,40 @@ Page({
         admins: []
       };
       
-      console.log('最终使用的数据:');
-      console.log('finalShopInfo:', finalShopInfo);
-      console.log('finalCurrentKitchen:', finalCurrentKitchen);
+      // ⭐ 修复：安全地读取 Storage，避免真机上阻塞
+      try {
+        categories = wx.getStorageSync('categories') || [];
+      } catch (e) {
+        console.error('读取 categories 失败:', e);
+        categories = [];
+      }
       
-      const categories = wx.getStorageSync('categories') || [];
-      const recipes = wx.getStorageSync('recipes') || [];
+      try {
+        recipes = wx.getStorageSync('recipes') || [];
+      } catch (e) {
+        console.error('读取 recipes 失败:', e);
+        recipes = [];
+      }
       
       console.log('categories数量:', categories.length);
       console.log('recipes数量:', recipes.length);
       
       // 过滤当前厨房的菜谱，并添加分类名称
-      const kitchenRecipes = recipes.filter(r => 
-        !r.kitchenId || r.kitchenId === finalCurrentKitchen.id
-      ).map(r => {
-        const category = categories.find(c => c.id === r.categoryId);
-        // 使用 Object.assign 替代展开运算符
-        return Object.assign({}, r, {
-          categoryName: category ? category.name : ''
+      let kitchenRecipes = [];
+      try {
+        kitchenRecipes = recipes.filter(r => 
+          !r.kitchenId || r.kitchenId === finalCurrentKitchen.id
+        ).map(r => {
+          const category = categories.find(c => c.id === r.categoryId);
+          // 使用 Object.assign 替代展开运算符
+          return Object.assign({}, r, {
+            categoryName: category ? category.name : ''
+          });
         });
-      });
+      } catch (filterError) {
+        console.error('过滤菜谱出错:', filterError);
+        kitchenRecipes = [];
+      }
 
       console.log('kitchenRecipes数量:', kitchenRecipes.length);
 
@@ -201,9 +311,16 @@ Page({
         shopInfo: finalShopInfo,
         currentKitchen: finalCurrentKitchen,
         categories: categories,
-        recipes: kitchenRecipes,
-        isAdmin: app.checkIsAdmin()
+        recipes: kitchenRecipes
       };
+      
+      // 安全地检查管理员状态
+      try {
+        updateData.isAdmin = app.checkIsAdmin();
+      } catch (e) {
+        console.error('检查管理员状态出错:', e);
+        updateData.isAdmin = false;
+      }
       
       // 如果是首次加载（没有 selectedCategory），设置默认值
       if (!this.data.selectedCategory) {
@@ -214,32 +331,41 @@ Page({
         console.log('setData完成，开始过滤菜谱');
         console.log('当前分类:', this.data.selectedCategory);
         // 数据设置完成后再过滤，确保数据同步
-        this.filterRecipes();
+        try {
+          this.filterRecipes();
+        } catch (filterError) {
+          console.error('过滤菜谱出错:', filterError);
+        }
       });
       
       // 切换厨房时清空购物车
-      this.clearCartIfKitchenChanged();
+      try {
+        this.clearCartIfKitchenChanged();
+      } catch (cartError) {
+        console.error('清空购物车检查出错:', cartError);
+      }
       
       console.log('===== loadData 结束 =====');
     } catch (error) {
       console.error('loadData 发生错误:', error);
       console.error('错误堆栈:', error.stack);
       
-      // 即使出错也要设置基础数据
-      this.setData({
-        shopInfo: { id: 'shop_001', name: '我的小店', avatar: '', background: '', intro: '欢迎来到我的小店' },
-        currentKitchen: { id: 'kitchen_001', name: '主厨房', isDefault: true, admins: [] },
-        categories: wx.getStorageSync('categories') || [],
-        recipes: [],
-        filteredRecipes: [],
-        isAdmin: false
-      });
+      // ⭐ 修复：即使出错也要设置基础数据，确保页面能显示
+      try {
+        const fallbackCategories = wx.getStorageSync('categories') || [];
+        this.setData({
+          shopInfo: { id: 'shop_001', name: '我的小店', avatar: '', background: '', intro: '欢迎来到我的小店' },
+          currentKitchen: { id: 'kitchen_001', name: '主厨房', isDefault: true, admins: [] },
+          categories: fallbackCategories,
+          recipes: [],
+          filteredRecipes: [],
+          isAdmin: false
+        });
+      } catch (setDataError) {
+        console.error('设置基础数据也失败:', setDataError);
+      }
       
-      wx.showToast({
-        title: '数据加载出错',
-        icon: 'none',
-        duration: 2000
-      });
+      // 不显示错误提示，避免干扰用户（页面已经有默认数据显示）
     }
   },
 

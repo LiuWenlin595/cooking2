@@ -64,6 +64,13 @@
   border-radius: 20rpx;
   font-size: 24rpx;
   display: inline-block;
+  border: none;
+  color: #fff;
+  line-height: 1.5;
+}
+
+.login-btn::after {
+  border: none;
 }
 
 /* 数据统计 */

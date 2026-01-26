@@ -9,31 +9,81 @@ Page({
   },
 
   onLoad(options) {
-    const id = options.id;
-    if (id) {
-      this.loadRecipe(id);
-    }
+    console.log('===== recipe/detail onLoad 开始 =====');
+    
+    // ⭐ 修复：立即设置默认数据，确保页面有内容显示（防止真机白屏）
     this.setData({
-      isAdmin: app.checkIsAdmin()
+      recipe: null,
+      isAdmin: false
+    }, () => {
+      console.log('✅ 默认数据设置完成');
     });
+    
+    try {
+      const id = options ? options.id : null;
+      if (id) {
+        this.loadRecipe(id);
+      } else {
+        // 如果没有ID，显示错误并返回
+        wx.showToast({
+          title: '菜谱ID错误',
+          icon: 'none'
+        });
+        setTimeout(() => {
+          wx.navigateBack();
+        }, 1500);
+      }
+      
+      try {
+        this.setData({
+          isAdmin: app.checkIsAdmin()
+        });
+      } catch (e) {
+        console.error('检查管理员权限失败:', e);
+      }
+    } catch (error) {
+      console.error('onLoad 发生错误:', error);
+      // 即使出错也保持默认数据显示
+    }
   },
 
   // 加载菜谱详情
   loadRecipe(id) {
-    const recipes = wx.getStorageSync('recipes') || [];
-    const recipe = recipes.find(r => r.id === id);
-    if (recipe) {
-      // 获取分类名称
-      const categories = wx.getStorageSync('categories') || [];
-      const category = categories.find(c => c.id === recipe.categoryId);
-      recipe.categoryName = category ? category.name : '';
+    try {
+      let recipes = [];
+      let categories = [];
       
-      this.setData({
-        recipe
-      });
-    } else {
+      try {
+        recipes = wx.getStorageSync('recipes') || [];
+        categories = wx.getStorageSync('categories') || [];
+      } catch (e) {
+        console.error('读取数据失败:', e);
+      }
+      
+      const recipe = recipes.find(r => r.id === id);
+      if (recipe) {
+        // 获取分类名称
+        const category = categories.find(c => c.id === recipe.categoryId);
+        const recipeWithCategory = Object.assign({}, recipe, {
+          categoryName: category ? category.name : ''
+        });
+        
+        this.setData({
+          recipe: recipeWithCategory
+        });
+      } else {
+        wx.showToast({
+          title: '菜谱不存在',
+          icon: 'none'
+        });
+        setTimeout(() => {
+          wx.navigateBack();
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('loadRecipe 发生错误:', error);
       wx.showToast({
-        title: '菜谱不存在',
+        title: '加载失败',
         icon: 'none'
       });
       setTimeout(() => {

@@ -2,23 +2,24 @@
 <view class="kitchen-page">
   <!-- 顶部店铺信息 -->
   <view class="header-section">
-    <view class="header-bg {{shopInfo && shopInfo.background ? '' : 'no-bg'}}" wx:if="{{shopInfo && shopInfo.background}}">
+    <!-- ⭐ 修复：简化条件判断，确保始终有内容显示 -->
+    <view class="header-bg no-bg" wx:if="{{!shopInfo || !shopInfo.background}}"></view>
+    <view class="header-bg" wx:else>
       <image src="{{shopInfo.background}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
     </view>
-    <view class="header-bg no-bg" wx:else></view>
     <view class="shop-info">
       <view class="shop-header">
         <view class="shop-left">
-          <view class="shop-avatar {{shopInfo && shopInfo.avatar ? '' : 'no-avatar'}}" wx:if="{{shopInfo && shopInfo.avatar}}">
-            <image src="{{shopInfo.avatar}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
-          </view>
-          <view class="shop-avatar no-avatar" wx:else>
+          <!-- ⭐ 修复：确保头像始终显示 -->
+          <view class="shop-avatar no-avatar" wx:if="{{!shopInfo || !shopInfo.avatar}}">
             <text style="font-size: 48rpx;">🏪</text>
           </view>
+          <view class="shop-avatar" wx:else>
+            <image src="{{shopInfo.avatar}}" mode="aspectFill" style="width: 100%; height: 100%;"></image>
+          </view>
           <view class="shop-details">
-            <text class="shop-name">{{shopInfo && shopInfo.name ? shopInfo.name : '我的小店'}}</text>
-            <text class="kitchen-name" wx:if="{{currentKitchen && currentKitchen.name}}">{{currentKitchen.name}} · 共{{filteredRecipes ? filteredRecipes.length : 0}}个菜谱</text>
-            <text class="kitchen-name" wx:else>加载中...</text>
+            <text class="shop-name">{{shopInfo ? (shopInfo.name || '我的小店') : '我的小店'}}</text>
+            <text class="kitchen-name">{{currentKitchen ? (currentKitchen.name || '主厨房') : '主厨房'}} · 共{{filteredRecipes ? filteredRecipes.length : 0}}个菜谱</text>
             <text class="shop-intro" wx:if="{{shopInfo && shopInfo.intro}}">{{shopInfo.intro}}</text>
           </view>
         </view>

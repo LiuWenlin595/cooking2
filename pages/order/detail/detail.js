@@ -9,26 +9,72 @@ Page({
   },
 
   onLoad(options) {
-    const id = options.id;
-    if (id) {
-      this.loadOrder(id);
-    }
+    console.log('===== order/detail onLoad 开始 =====');
+    
+    // ⭐ 修复：立即设置默认数据，确保页面有内容显示（防止真机白屏）
     this.setData({
-      isAdmin: app.checkIsAdmin()
+      order: null,
+      isAdmin: false
+    }, () => {
+      console.log('✅ 默认数据设置完成');
     });
+    
+    try {
+      const id = options ? options.id : null;
+      if (id) {
+        this.loadOrder(id);
+      } else {
+        // 如果没有ID，显示错误并返回
+        wx.showToast({
+          title: '订单ID错误',
+          icon: 'none'
+        });
+        setTimeout(() => {
+          wx.navigateBack();
+        }, 1500);
+      }
+      
+      try {
+        this.setData({
+          isAdmin: app.checkIsAdmin()
+        });
+      } catch (e) {
+        console.error('检查管理员权限失败:', e);
+      }
+    } catch (error) {
+      console.error('onLoad 发生错误:', error);
+      // 即使出错也保持默认数据显示
+    }
   },
 
   // 加载订单详情
   loadOrder(id) {
-    const orders = wx.getStorageSync('orders') || [];
-    const order = orders.find(o => o.id === id);
-    if (order) {
-      this.setData({
-        order
-      });
-    } else {
+    try {
+      let orders = [];
+      try {
+        orders = wx.getStorageSync('orders') || [];
+      } catch (e) {
+        console.error('读取订单数据失败:', e);
+      }
+      
+      const order = orders.find(o => o.id === id);
+      if (order) {
+        this.setData({
+          order: order
+        });
+      } else {
+        wx.showToast({
+          title: '订单不存在',
+          icon: 'none'
+        });
+        setTimeout(() => {
+          wx.navigateBack();
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('loadOrder 发生错误:', error);
       wx.showToast({
-        title: '订单不存在',
+        title: '加载失败',
         icon: 'none'
       });
       setTimeout(() => {

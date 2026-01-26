@@ -1,25 +1,59 @@
 // app.js
+const cloudStorage = require('./utils/cloudStorage');
+
 App({
   globalData: {
     userInfo: null,
     shopInfo: null,
     currentKitchen: null,
     isAdmin: false,
-    orderNotification: true
+    orderNotification: true,
+    isInitialized: false, // ⭐ 添加初始化标志
+    useCloudStorage: false // ⭐ 是否使用云存储（需要配置后端服务）
+  },
+
+  // ⭐ 添加全局错误处理
+  onError(msg) {
+    console.error('========== 全局错误 ==========');
+    console.error('错误信息:', msg);
+    // 在真机上可以显示错误提示
+    try {
+      wx.showToast({
+        title: '发生错误，请查看控制台',
+        icon: 'none',
+        duration: 3000
+      });
+    } catch (e) {
+      console.error('显示错误提示失败:', e);
+    }
   },
 
   onLaunch() {
     console.log('========== App onLaunch 开始 ==========');
     
     try {
-      // 初始化本地存储数据
-      this.initLocalData();
+      // ⭐ 修复：初始化本地存储数据（使用 try-catch 包裹，避免真机上阻塞）
+      try {
+        this.initLocalData();
+      } catch (initError) {
+        console.error('❌ initLocalData 失败:', initError);
+        // 尝试强制初始化
+        try {
+          this.forceInit();
+        } catch (forceError) {
+          console.error('❌ forceInit 也失败:', forceError);
+        }
+      }
       
       // 验证初始化结果
       if (!this.globalData.shopInfo) {
         console.error('❌ 初始化后 shopInfo 为空！');
         // 强制重新初始化
-        this.forceInit();
+        try {
+          this.forceInit();
+        } catch (forceError) {
+          console.error('❌ forceInit 失败:', forceError);
+        }
       } else {
         console.log('✅ shopInfo 初始化成功');
       }
@@ -30,30 +64,39 @@ App({
         console.log('✅ currentKitchen 初始化成功');
       }
       
-      // 尝试从本地存储加载用户信息
-      const userInfo = wx.getStorageSync('userInfo');
-      if (userInfo) {
-        this.globalData.userInfo = userInfo;
-        console.log('✅ 加载缓存的用户信息:', userInfo);
-      } else {
-        console.log('ℹ️ 没有缓存的用户信息');
+      // ⭐ 修复：不自动加载缓存的用户信息
+      // 用户必须主动点击登录按钮，通过 wx.getUserProfile 授权才能登录
+      // 这样可以确保每次都是用户自己的微信账号登录
+      console.log('ℹ️ 应用启动，等待用户主动登录');
+      this.globalData.userInfo = null;
+      
+      // ⭐ 修复：安全地加载订单通知设置
+      try {
+        const orderNotification = wx.getStorageSync('orderNotification');
+        if (orderNotification !== undefined) {
+          this.globalData.orderNotification = orderNotification;
+        }
+      } catch (e) {
+        console.error('读取 orderNotification 失败:', e);
       }
       
-      // 加载订单通知设置
-      const orderNotification = wx.getStorageSync('orderNotification');
-      if (orderNotification !== undefined) {
-        this.globalData.orderNotification = orderNotification;
-      }
+      // ⭐ 标记初始化完成
+      this.globalData.isInitialized = true;
       
       console.log('========== App初始化完成 ==========');
       console.log('shopInfo:', this.globalData.shopInfo);
       console.log('currentKitchen:', this.globalData.currentKitchen);
       console.log('userInfo:', this.globalData.userInfo);
+      console.log('isInitialized:', this.globalData.isInitialized);
     } catch (error) {
       console.error('❌ App onLaunch 发生错误:', error);
       console.error('错误堆栈:', error.stack);
       // 尝试强制初始化
-      this.forceInit();
+      try {
+        this.forceInit();
+      } catch (forceError) {
+        console.error('❌ forceInit 也失败:', forceError);
+      }
     }
   },
   
@@ -234,88 +277,188 @@ App({
   },
 
   // 获取用户信息（包含登录）
+  // ⭐ 修复：使用微信官方 API，必须用户主动授权，不能自动登录
+  // 参考：https://developers.weixin.qq.com/miniprogram/dev/api/open-api/user-info/wx.getUserProfile.html
+  // ⚠️ 重要：wx.getUserProfile 必须在用户点击事件中直接调用，不能延迟或包装
   getUserInfo() {
     return new Promise((resolve, reject) => {
-      console.log('开始获取用户信息...');
+      console.log('========== 开始获取用户信息（需要用户授权） ==========');
+      console.log('⚠️ 注意：wx.getUserProfile 必须在用户点击事件中直接调用');
       
-      // ⭐ 关键修复：先调用 wx.getUserProfile（必须在用户手势上下文中立即调用）
+      // ⭐ 关键修复：使用 wx.getUserProfile 获取用户信息
+      // 此接口会弹出授权弹窗，用户必须主动点击"允许"才能获取信息
+      // ⚠️ 必须在用户点击事件中直接调用，不能延迟调用
+      // ⚠️ 如果不在用户点击事件中调用，会返回错误
       wx.getUserProfile({
-        desc: '用于完善用户资料',
+        desc: '用于完善用户资料和身份识别', // 必填，声明获取用户个人信息后的用途
         success: (profileRes) => {
-          console.log('wx.getUserProfile 成功');
+          console.log('✅ wx.getUserProfile 成功，用户已授权');
+          console.log('获取到的用户信息:', {
+            nickName: profileRes.userInfo.nickName,
+            avatarUrl: profileRes.userInfo.avatarUrl ? '已设置' : '未设置',
+            gender: profileRes.userInfo.gender,
+            country: profileRes.userInfo.country,
+            province: profileRes.userInfo.province,
+            city: profileRes.userInfo.city
+          });
+          
           const userInfo = profileRes.userInfo;
           
-          // 然后再调用 wx.login 获取 code
+          // ⭐ 然后调用 wx.login 获取登录凭证 code
+          // 参考：https://developers.weixin.qq.com/miniprogram/dev/api/open-api/login/wx.login.html
           wx.login({
             success: (loginRes) => {
               const code = loginRes.code;
-              console.log('wx.login 成功，code:', code);
+              console.log('✅ wx.login 成功，code:', code.substring(0, 10) + '...');
               
-              // 保存用户信息
+              // ⭐ 保存用户信息（这是用户自己的微信账号信息）
               const completeUserInfo = {
                 nickName: userInfo.nickName,
                 avatarUrl: userInfo.avatarUrl,
-                code: code,
-                loginTime: new Date().toISOString()
+                code: code, // 登录凭证，可以发送到后端换取 openid
+                loginTime: new Date().toISOString(),
+                // 添加更多用户信息字段
+                gender: userInfo.gender || 0,
+                country: userInfo.country || '',
+                province: userInfo.province || '',
+                city: userInfo.city || '',
+                language: userInfo.language || 'zh_CN'
               };
               
+              // ⭐ 清除旧的用户信息，确保使用新的授权信息
+              this.globalData.userInfo = null;
+              try {
+                wx.removeStorageSync('userInfo');
+              } catch (e) {
+                console.error('清除旧用户信息失败:', e);
+              }
+              
+              // 保存到全局数据和本地存储
               this.globalData.userInfo = completeUserInfo;
-              wx.setStorageSync('userInfo', completeUserInfo);
-              console.log('用户信息已保存:', completeUserInfo);
+              try {
+                wx.setStorageSync('userInfo', completeUserInfo);
+                console.log('✅ 用户信息已保存到本地存储');
+                console.log('保存的用户昵称:', completeUserInfo.nickName);
+                console.log('保存的用户头像:', completeUserInfo.avatarUrl ? '已设置' : '未设置');
+              } catch (e) {
+                console.error('保存用户信息到本地存储失败:', e);
+              }
               
               // 重新检查管理员状态
               this.checkIsAdmin();
               
+              // ⭐ 如果启用云存储，登录后自动从云端同步数据
+              if (this.globalData.useCloudStorage && cloudStorage) {
+                console.log('开始从云端同步数据...');
+                cloudStorage.syncAllDataFromCloud().then((cloudData) => {
+                  console.log('✅ 云端数据同步成功');
+                  // 更新全局数据
+                  if (cloudData.shopInfo) {
+                    this.globalData.shopInfo = cloudData.shopInfo;
+                    if (cloudData.shopInfo.kitchens && cloudData.shopInfo.kitchens.length > 0) {
+                      const currentKitchen = cloudData.shopInfo.kitchens.find(k => k.id === cloudData.shopInfo.currentKitchenId) || cloudData.shopInfo.kitchens[0];
+                      this.globalData.currentKitchen = currentKitchen;
+                    }
+                  }
+                  // 重新检查管理员状态
+                  this.checkIsAdmin();
+                }).catch(err => {
+                  console.error('❌ 云端数据同步失败:', err);
+                  // 同步失败不影响登录，继续使用本地数据
+                });
+              }
+              
+              console.log('========== 登录成功 ==========');
               resolve(completeUserInfo);
             },
             fail: (loginErr) => {
-              console.error('wx.login 失败:', loginErr);
+              console.error('❌ wx.login 失败:', loginErr);
               
-              // 即使 login 失败，也保存用户信息（不带 code）
+              // ⭐ 即使 login 失败，也保存用户信息（因为用户已经授权了）
+              // 但标记 code 为空，表示登录凭证获取失败
               const completeUserInfo = {
                 nickName: userInfo.nickName,
                 avatarUrl: userInfo.avatarUrl,
-                code: '',
-                loginTime: new Date().toISOString()
+                code: '', // 登录凭证获取失败
+                loginTime: new Date().toISOString(),
+                gender: userInfo.gender || 0,
+                country: userInfo.country || '',
+                province: userInfo.province || '',
+                city: userInfo.city || '',
+                language: userInfo.language || 'zh_CN'
               };
               
+              // ⭐ 清除旧的用户信息
+              this.globalData.userInfo = null;
+              try {
+                wx.removeStorageSync('userInfo');
+              } catch (e) {
+                console.error('清除旧用户信息失败:', e);
+              }
+              
               this.globalData.userInfo = completeUserInfo;
-              wx.setStorageSync('userInfo', completeUserInfo);
-              console.log('用户信息已保存(无code):', completeUserInfo);
+              try {
+                wx.setStorageSync('userInfo', completeUserInfo);
+              } catch (e) {
+                console.error('保存用户信息失败:', e);
+              }
               
               this.checkIsAdmin();
+              
+              // ⭐ 即使 login 失败，用户信息已经获取，仍然 resolve
+              // 但可以提示用户登录凭证获取失败
+              console.warn('⚠️ 登录凭证获取失败，但用户信息已保存');
               resolve(completeUserInfo);
             }
           });
         },
         fail: (err) => {
-          console.error('wx.getUserProfile 失败:', err);
+          console.error('❌ wx.getUserProfile 失败:', err);
+          console.error('错误详情:', JSON.stringify(err));
           
-          // 如果用户取消授权，不从缓存获取
+          // ⭐ 关键修复：无论什么错误，都不从缓存获取
+          // 必须用户主动授权才能登录，不能自动登录
           if (err.errMsg && err.errMsg.indexOf('cancel') > -1) {
-            reject({ errMsg: 'getUserProfile:fail cancel' });
+            console.log('用户取消了授权');
+            reject({ 
+              errMsg: 'getUserProfile:fail cancel',
+              message: '您取消了授权，无法登录'
+            });
             return;
           }
           
-          // 其他错误，尝试从缓存获取
-          const userInfo = wx.getStorageSync('userInfo');
-          if (userInfo && userInfo.nickName) {
-            console.log('从缓存获取用户信息');
-            this.globalData.userInfo = userInfo;
-            this.checkIsAdmin();
-            resolve(userInfo);
-          } else {
-            reject(err);
+          // ⭐ 检查是否是"不在用户点击事件中调用"的错误
+          if (err.errMsg && (err.errMsg.indexOf('getUserProfile:fail') > -1 || err.errMsg.indexOf('not in user click') > -1)) {
+            console.error('⚠️ wx.getUserProfile 必须在用户点击事件中直接调用');
+            reject({
+              errMsg: err.errMsg,
+              message: '登录失败：必须在用户点击事件中调用，请重试'
+            });
+            return;
           }
+          
+          // ⭐ 其他错误也不从缓存获取，必须重新授权
+          console.error('获取用户信息失败，需要用户重新授权');
+          reject({
+            errMsg: err.errMsg || 'getUserProfile:fail',
+            message: '获取用户信息失败，请重试'
+          });
         }
       });
     });
   },
 
   // 检查是否已登录
+  // ⭐ 注意：这个方法只检查登录状态，不会自动登录
+  // 只检查 globalData，不检查缓存，确保必须用户主动授权
   checkLogin() {
-    const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo');
-    return !!(userInfo && userInfo.nickName);
+    // 只检查 globalData（当前会话的登录状态）
+    // 不检查缓存，确保用户必须主动登录
+    if (this.globalData.userInfo && this.globalData.userInfo.nickName) {
+      return true;
+    }
+    
+    return false;
   },
 
   // 要求登录（如果未登录则提示）
@@ -385,12 +528,32 @@ App({
     }
   },
 
-  // 更新店铺信息
+  // 更新店铺信息（同时保存到本地和云端）
   updateShopInfo(shopInfo) {
     this.globalData.shopInfo = shopInfo;
     wx.setStorageSync('shopInfo', shopInfo);
     const currentKitchen = shopInfo.kitchens.find(k => k.id === shopInfo.currentKitchenId);
     this.globalData.currentKitchen = currentKitchen || shopInfo.kitchens[0];
+    
+    // ⭐ 如果启用云存储，同时上传到云端
+    if (this.globalData.useCloudStorage && cloudStorage && this.globalData.userInfo && this.globalData.userInfo.openid) {
+      cloudStorage.uploadData('shopInfo', shopInfo).catch(err => {
+        console.error('上传shopInfo到云端失败:', err);
+      });
+    }
+  },
+  
+  // ⭐ 保存数据到本地和云端（统一的数据保存方法）
+  saveDataToLocalAndCloud(dataType, data) {
+    // 保存到本地
+    wx.setStorageSync(dataType, data);
+    
+    // 如果启用云存储，同时上传到云端
+    if (this.globalData.useCloudStorage && cloudStorage && this.globalData.userInfo && this.globalData.userInfo.openid) {
+      cloudStorage.uploadData(dataType, data).catch(err => {
+        console.error(`上传${dataType}到云端失败:`, err);
+      });
+    }
   },
 
   // 切换厨房

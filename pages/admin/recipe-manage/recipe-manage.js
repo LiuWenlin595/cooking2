@@ -11,7 +11,25 @@ Page({
   },
 
   onLoad() {
-    this.checkAdminAccess();
+    console.log('===== admin/recipe-manage onLoad 开始 =====');
+    
+    // ⭐ 修复：立即设置默认数据，确保页面有内容显示（防止真机白屏）
+    this.setData({
+      recipes: [],
+      categories: [],
+      selectedCategory: 'all',
+      searchKeyword: '',
+      isAdmin: false
+    }, () => {
+      console.log('✅ 默认数据设置完成');
+    });
+    
+    try {
+      this.checkAdminAccess();
+    } catch (error) {
+      console.error('onLoad 发生错误:', error);
+      // 即使出错也保持默认数据显示
+    }
   },
 
   onShow() {
@@ -21,44 +39,93 @@ Page({
 
   // 检查管理员权限
   checkAdminAccess() {
-    const isAdmin = app.checkIsAdmin();
-    
-    if (!isAdmin) {
-      wx.showModal({
-        title: '权限不足',
-        content: '您不是管理员，无法访问此页面',
-        showCancel: false,
-        success: () => {
-          wx.navigateBack();
+    try {
+      let isAdmin = false;
+      try {
+        isAdmin = app.checkIsAdmin();
+      } catch (e) {
+        console.error('检查管理员权限失败:', e);
+      }
+      
+      if (!isAdmin) {
+        // ⭐ 修复：延迟显示提示，确保页面先渲染
+        if (typeof wx.nextTick === 'function') {
+          wx.nextTick(() => {
+            wx.showModal({
+              title: '权限不足',
+              content: '您不是管理员，无法访问此页面',
+              showCancel: false,
+              success: () => {
+                wx.navigateBack();
+              }
+            });
+          });
+        } else {
+          setTimeout(() => {
+            wx.showModal({
+              title: '权限不足',
+              content: '您不是管理员，无法访问此页面',
+              showCancel: false,
+              success: () => {
+                wx.navigateBack();
+              }
+            });
+          }, 500);
         }
-      });
-      return;
-    }
+        return;
+      }
 
-    this.setData({ isAdmin: true });
+      this.setData({ isAdmin: true });
+    } catch (error) {
+      console.error('checkAdminAccess 发生错误:', error);
+    }
   },
 
   // 加载数据
   loadData() {
-    const recipes = wx.getStorageSync('recipes') || [];
-    const categories = wx.getStorageSync('categories') || [];
-    const currentKitchen = app.globalData.currentKitchen;
+    try {
+      let recipes = [];
+      let categories = [];
+      let currentKitchen = null;
+      
+      try {
+        recipes = wx.getStorageSync('recipes') || [];
+        categories = wx.getStorageSync('categories') || [];
+        currentKitchen = app.globalData.currentKitchen;
+      } catch (e) {
+        console.error('读取数据失败:', e);
+      }
 
-    // 过滤当前厨房的菜谱
-    const kitchenRecipes = recipes.filter(r => 
-      !r.kitchenId || r.kitchenId === currentKitchen.id
-    ).map(r => {
-      const category = categories.find(c => c.id === r.categoryId);
-      // 使用 Object.assign 替代展开运算符
-      return Object.assign({}, r, {
-        categoryName: category ? category.name : '未分类'
+      // 过滤当前厨房的菜谱
+      let kitchenRecipes = [];
+      if (currentKitchen && currentKitchen.id) {
+        try {
+          kitchenRecipes = recipes.filter(r => 
+            !r.kitchenId || r.kitchenId === currentKitchen.id
+          ).map(r => {
+            const category = categories.find(c => c.id === r.categoryId);
+            // 使用 Object.assign 替代展开运算符
+            return Object.assign({}, r, {
+              categoryName: category ? category.name : '未分类'
+            });
+          });
+        } catch (e) {
+          console.error('处理菜谱数据失败:', e);
+        }
+      }
+
+      this.setData({
+        recipes: kitchenRecipes,
+        categories: categories
       });
-    });
-
-    this.setData({
-      recipes: kitchenRecipes,
-      categories
-    });
+    } catch (error) {
+      console.error('loadData 发生错误:', error);
+      // 即使出错也设置默认值
+      this.setData({
+        recipes: [],
+        categories: []
+      });
+    }
   },
 
   // 搜索

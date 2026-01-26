@@ -14,21 +14,77 @@ Page({
   },
 
   onLoad() {
-    this.loadShopInfo();
+    console.log('===== shop/settings onLoad 开始 =====');
+    
+    // ⭐ 修复：立即设置默认数据，确保页面有内容显示（防止真机白屏）
+    this.setData({
+      shopInfo: null,
+      formData: {
+        name: '',
+        avatar: '',
+        background: '',
+        intro: ''
+      },
+      orderNotification: true
+    }, () => {
+      console.log('✅ 默认数据设置完成');
+    });
+    
+    try {
+      this.loadShopInfo();
+    } catch (error) {
+      console.error('onLoad 发生错误:', error);
+      // 即使出错也保持默认数据显示
+    }
   },
 
   // 加载店铺信息
   loadShopInfo() {
-    const shopInfo = app.globalData.shopInfo;
-    const orderNotification = app.globalData.orderNotification;
-    if (shopInfo) {
+    try {
+      let shopInfo = null;
+      let orderNotification = true;
+      
+      try {
+        shopInfo = app.globalData.shopInfo;
+        orderNotification = app.globalData.orderNotification !== undefined ? app.globalData.orderNotification : true;
+      } catch (e) {
+        console.error('读取店铺信息失败:', e);
+      }
+      
+      if (shopInfo) {
+        this.setData({
+          shopInfo,
+          'formData.name': shopInfo.name || '',
+          'formData.avatar': shopInfo.avatar || '',
+          'formData.background': shopInfo.background || '',
+          'formData.intro': shopInfo.intro || '',
+          orderNotification
+        });
+      } else {
+        // 如果没有店铺信息，设置默认值
+        const defaultShopInfo = {
+          id: 'shop_001',
+          name: '我的小店',
+          avatar: '',
+          background: '',
+          intro: '欢迎来到我的小店'
+        };
+        this.setData({
+          shopInfo: defaultShopInfo,
+          'formData.name': defaultShopInfo.name,
+          'formData.avatar': defaultShopInfo.avatar,
+          'formData.background': defaultShopInfo.background,
+          'formData.intro': defaultShopInfo.intro,
+          orderNotification
+        });
+      }
+    } catch (error) {
+      console.error('loadShopInfo 发生错误:', error);
+      // 即使出错也设置默认值
       this.setData({
-        shopInfo,
-        'formData.name': shopInfo.name || '',
-        'formData.avatar': shopInfo.avatar || '',
-        'formData.background': shopInfo.background || '',
-        'formData.intro': shopInfo.intro || '',
-        orderNotification
+        shopInfo: { id: 'shop_001', name: '我的小店', avatar: '', background: '', intro: '' },
+        'formData.name': '我的小店',
+        orderNotification: true
       });
     }
   },

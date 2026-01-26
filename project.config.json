@@ -49,7 +49,7 @@
     "disableSWC": true
   },
   "compileType": "miniprogram",
-  "libVersion": "2.19.4",
+  "libVersion": "2.31.0",
   "appid": "wxc3444090274b6825",
   "projectname": "CookingApp2",
   "condition": {},
