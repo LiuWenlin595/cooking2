@@ -326,7 +326,7 @@ Page({
       const apiBaseUrl = cloudStorage.config.apiBaseUrl;
       
       // 如果后端服务未配置，使用模拟数据（仅用于测试）
-      if (apiBaseUrl === 'https://your-server.com/api') {
+      if (apiBaseUrl === 'https://your-server.com/api' || apiBaseUrl === 'https://your-server.com' || !apiBaseUrl || apiBaseUrl.includes('your-server')) {
         console.warn('⚠️ 后端服务未配置，使用模拟 openid（仅用于测试）');
         console.warn('⚠️ 请参考"后端服务配置说明.md"配置后端服务');
         console.warn('⚠️ 模拟 openid 仅用于开发测试，不能用于生产环境');
@@ -356,7 +356,7 @@ Page({
       
       // 调用后端接口获取 openid
       wx.request({
-        url: `${apiBaseUrl}/user/getOpenId`,
+        url: `${apiBaseUrl}/api/user/getOpenId`,
         method: 'POST',
         data: {
           code: code
@@ -364,6 +364,9 @@ Page({
         header: {
           'content-type': 'application/json'
         },
+        // ⭐ 添加超时和兼容性配置
+        timeout: 10000,  // 10秒超时
+        enableHttp2: false,  // 禁用 HTTP/2，使用 HTTP/1.1（小程序兼容性更好）
         success: (res) => {
           if (res.statusCode === 200 && res.data.success) {
             console.log('✅ 获取 openid 成功');
@@ -374,7 +377,27 @@ Page({
         },
         fail: (err) => {
           console.error('获取 openid 失败:', err);
-          reject(err);
+          console.error('错误详情:', JSON.stringify(err, null, 2));
+          
+          // 提供更详细的错误信息
+          let errorMessage = '网络请求失败';
+          if (err.errMsg) {
+            if (err.errMsg.includes('certificate') || err.errMsg.includes('SSL') || err.errMsg.includes('TLS')) {
+              errorMessage = 'SSL证书验证失败，请检查服务器证书配置';
+            } else if (err.errMsg.includes('timeout')) {
+              errorMessage = '请求超时，请检查网络连接';
+            } else if (err.errMsg.includes('fail')) {
+              errorMessage = '无法连接到服务器，请检查服务器是否正常运行';
+            }
+          }
+          
+          wx.showModal({
+            title: '登录失败',
+            content: `${errorMessage}\n\n请确认：\n1. 服务器是否正常运行\n2. 网络连接是否正常\n3. 开发者工具中是否关闭了"不校验合法域名"`,
+            showCancel: false
+          });
+          
+          reject(new Error(errorMessage));
         }
       });
     });

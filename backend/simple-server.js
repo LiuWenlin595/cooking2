@@ -1,10 +1,11 @@
-// backend/aliyun-oss-server.js
-// 阿里云OSS后端服务（Node.js + Express）
-// 支持从环境变量读取配置
+// backend/simple-server.js
+// 简化版后端服务（不使用OSS，直接存储在服务器本地）
+// 适用于轻量应用服务器，数据量不大的情况
 
 const express = require('express');
-const OSS = require('ali-oss');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const cors = require('cors');
 
 const app = express();
@@ -18,34 +19,24 @@ app.use(cors({
   credentials: true
 }));
 
-// ⚠️ 从环境变量读取配置（推荐）或使用默认值
-const ossConfig = {
-  region: process.env.OSS_REGION || 'oss-cn-hangzhou',
-  accessKeyId: process.env.OSS_ACCESS_KEY_ID || 'your-access-key-id',
-  accessKeySecret: process.env.OSS_ACCESS_KEY_SECRET || 'your-access-key-secret',
-  bucket: process.env.OSS_BUCKET || 'your-bucket-name'
-};
-
-// 微信小程序配置
+// ⚠️ 从环境变量读取配置或使用默认值
 const wxConfig = {
   appId: process.env.WX_APP_ID || 'your-miniprogram-appid',
   appSecret: process.env.WX_APP_SECRET || 'your-miniprogram-secret'
 };
 
-// 验证配置
-if (ossConfig.accessKeyId === 'your-access-key-id' || 
-    wxConfig.appId === 'your-miniprogram-appid') {
-  console.warn('⚠️ 警告：请配置 OSS 和微信小程序信息！');
-  console.warn('⚠️ 可以通过环境变量或直接修改代码配置');
+// 数据存储目录（存储在服务器本地）
+const DATA_DIR = process.env.DATA_DIR || '/opt/cooking-app-backend/data';
+
+// 确保数据目录存在
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  console.log('✅ 创建数据目录:', DATA_DIR);
 }
 
-// 创建OSS客户端
-let client = null;
-try {
-  client = new OSS(ossConfig);
-  console.log('✅ OSS 客户端初始化成功');
-} catch (error) {
-  console.error('❌ OSS 客户端初始化失败:', error.message);
+// 验证配置
+if (wxConfig.appId === 'your-miniprogram-appid') {
+  console.warn('⚠️ 警告：请配置微信小程序信息！');
 }
 
 // 健康检查接口
@@ -53,7 +44,8 @@ app.get('/health', (req, res) => {
   res.json({
     success: true,
     message: '服务运行正常',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    storage: '本地存储'
   });
 });
 
@@ -114,7 +106,7 @@ app.post('/api/user/getOpenId', async (req, res) => {
 });
 
 /**
- * 上传数据到OSS
+ * 上传数据到服务器本地
  * POST /api/data/upload
  * Body: { openid: "用户openid", dataType: "数据类型", data: {} }
  */
@@ -129,31 +121,25 @@ app.post('/api/data/upload', async (req, res) => {
       });
     }
     
-    if (!client) {
-      return res.json({
-        success: false,
-        message: 'OSS 客户端未初始化，请检查配置'
-      });
+    // 用户数据目录：data/users/{openid}/
+    const userDir = path.join(DATA_DIR, 'users', openid);
+    if (!fs.existsSync(userDir)) {
+      fs.mkdirSync(userDir, { recursive: true });
     }
     
-    // OSS文件路径：users/{openid}/{dataType}.json
-    const objectKey = `users/${openid}/${dataType}.json`;
+    // 文件路径：data/users/{openid}/{dataType}.json
+    const filePath = path.join(userDir, `${dataType}.json`);
     
-    // 将数据转换为JSON字符串
-    const dataString = JSON.stringify(data);
+    // 将数据保存为JSON文件
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
     
-    // 上传到OSS
-    const result = await client.put(objectKey, Buffer.from(dataString), {
-      'Content-Type': 'application/json'
-    });
-    
-    console.log(`✅ 数据上传成功: ${objectKey}`);
+    console.log(`✅ 数据上传成功: ${filePath}`);
     
     res.json({
       success: true,
       data: {
-        url: result.url,
-        objectKey: objectKey
+        filePath: filePath,
+        message: '数据已保存到服务器本地'
       }
     });
   } catch (error) {
@@ -166,7 +152,7 @@ app.post('/api/data/upload', async (req, res) => {
 });
 
 /**
- * 从OSS下载数据
+ * 从服务器本地下载数据
  * POST /api/data/download
  * Body: { openid: "用户openid", dataType: "数据类型" }
  */
@@ -181,38 +167,31 @@ app.post('/api/data/download', async (req, res) => {
       });
     }
     
-    if (!client) {
-      return res.json({
-        success: false,
-        message: 'OSS 客户端未初始化，请检查配置'
-      });
-    }
-    
-    // OSS文件路径：users/{openid}/{dataType}.json
-    const objectKey = `users/${openid}/${dataType}.json`;
+    // 文件路径：data/users/{openid}/{dataType}.json
+    const filePath = path.join(DATA_DIR, 'users', openid, `${dataType}.json`);
     
     try {
-      // 从OSS下载数据
-      const result = await client.get(objectKey);
-      const data = JSON.parse(result.content.toString());
-      
-      console.log(`✅ 数据下载成功: ${objectKey}`);
-      
-      res.json({
-        success: true,
-        data: data
-      });
-    } catch (error) {
-      // 如果文件不存在，返回空数据
-      if (error.code === 'NoSuchKey') {
-        console.log(`ℹ️ 文件不存在: ${objectKey}`);
+      // 读取文件
+      if (fs.existsSync(filePath)) {
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        const data = JSON.parse(fileContent);
+        
+        console.log(`✅ 数据下载成功: ${filePath}`);
+        
+        res.json({
+          success: true,
+          data: data
+        });
+      } else {
+        // 文件不存在，返回空数据
+        console.log(`ℹ️ 文件不存在: ${filePath}`);
         res.json({
           success: true,
           data: null
         });
-      } else {
-        throw error;
       }
+    } catch (error) {
+      throw error;
     }
   } catch (error) {
     console.error('下载数据失败:', error);
@@ -235,15 +214,10 @@ app.use((err, req, res, next) => {
 // 启动服务器
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
-  console.log('========== 后端服务启动成功 ==========');
+  console.log('========== 后端服务启动成功（本地存储版）==========');
   console.log(`服务器运行在端口 ${PORT}`);
+  console.log(`数据存储目录: ${DATA_DIR}`);
   console.log(`健康检查: http://localhost:${PORT}/health`);
   console.log(`获取 openid: POST http://localhost:${PORT}/api/user/getOpenId`);
-  console.log('=====================================');
+  console.log('================================================');
 });
-
-// 如果使用阿里云函数计算，导出handler函数
-exports.handler = async (event, context) => {
-  // 函数计算的handler实现
-  // 需要根据阿里云函数计算的格式实现
-};

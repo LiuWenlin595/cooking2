@@ -1,0 +1,25 @@
+步骤说明：
+申请域名（推荐便宜的域名，如 .top、.xyz，约 10-20 元/年）
+阿里云、腾讯云、GoDaddy 等均可
+示例：cooking-app.yourname.top
+
+配置 DNS 解析
+在域名服务商处添加 A 记录：
+主机记录：@ 或 cooking-app（根据你的域名）
+记录值：47.112.167.11（你的服务器 IP）
+TTL：600
+
+等待 DNS 生效（通常 5-30 分钟）
+测试：ping your-domain.com 应该返回 47.112.167.11
+
+在服务器上执行配置脚本
+# 上传脚本到服务器
+scp 配置域名和证书.sh root@47.112.167.11:/opt/cooking-app-backend/
+
+# 在服务器上执行
+ssh root@47.112.167.11
+cd /opt/cooking-app-backend
+sudo bash 配置域名和证书.sh your-domain.com修改小程序配置
+
+修改小程序配置
+编辑 utils/cloudStorage.js，将 apiBaseUrl 改为你的域名

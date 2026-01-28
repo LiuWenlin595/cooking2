@@ -6,10 +6,10 @@
  * ⚠️ 注意：需要配置你的后端服务器地址
  */
 const config = {
-  // 后端服务器地址（需要替换为你的实际地址）
-  apiBaseUrl: 'https://your-server.com/api',
-  // 或者使用阿里云函数计算地址
-  // apiBaseUrl: 'https://your-function.aliyuncs.com/api'
+  // 后端服务器地址（已配置为你的服务器地址）
+  // ⚠️ 微信小程序必须使用 HTTPS，不允许 HTTP
+  // 使用正式域名 + Let's Encrypt 证书，通过 Nginx 反向代理到 Node.js
+  apiBaseUrl: 'https://pihaha.top'
 };
 
 /**
@@ -36,11 +36,13 @@ function getUserOpenId() {
     
     // 调用后端接口获取openid
     wx.request({
-      url: `${config.apiBaseUrl}/user/getOpenId`,
+      url: `${config.apiBaseUrl}/api/user/getOpenId`,
       method: 'POST',
       data: {
         code: userInfo.code
       },
+      timeout: 10000,  // 10秒超时
+      enableHttp2: false,  // 禁用 HTTP/2，使用 HTTP/1.1（小程序兼容性更好）
       success: (res) => {
         if (res.statusCode === 200 && res.data.success) {
           const openid = res.data.data.openid;
@@ -82,12 +84,14 @@ function uploadData(dataType, data) {
       
       // 调用后端接口上传数据
       wx.request({
-        url: `${config.apiBaseUrl}/data/upload`,
+        url: `${config.apiBaseUrl}/api/data/upload`,
         method: 'POST',
         data: uploadData,
         header: {
           'content-type': 'application/json'
         },
+        timeout: 10000,  // 10秒超时
+        enableHttp2: false,  // 禁用 HTTP/2，使用 HTTP/1.1（小程序兼容性更好）
         success: (res) => {
           if (res.statusCode === 200 && res.data.success) {
             console.log(`✅ ${dataType} 上传成功`);
@@ -121,7 +125,7 @@ function downloadData(dataType) {
       
       // 调用后端接口下载数据
       wx.request({
-        url: `${config.apiBaseUrl}/data/download`,
+        url: `${config.apiBaseUrl}/api/data/download`,
         method: 'POST',
         data: {
           openid: openid,
@@ -130,6 +134,8 @@ function downloadData(dataType) {
         header: {
           'content-type': 'application/json'
         },
+        timeout: 10000,  // 10秒超时
+        enableHttp2: false,  // 禁用 HTTP/2，使用 HTTP/1.1（小程序兼容性更好）
         success: (res) => {
           if (res.statusCode === 200 && res.data.success) {
             console.log(`✅ ${dataType} 下载成功`);
